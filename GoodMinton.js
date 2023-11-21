@@ -40,8 +40,7 @@ export class GoodMinton extends Scene {
             circle: new defs.Regular_2D_Polygon(1, 15),
             cube: new Cube(),
             cork: new (defs.Subdivision_Sphere)(4),
-            racket_handle: new defs.Rounded_Capped_Cylinder(50, 50),
-            racket_head: new defs.Rounded_Capped_Cylinder(50, 50)
+            cylinder: new defs.Rounded_Capped_Cylinder(50, 50),
         };
 
         // *** Materials
@@ -128,18 +127,26 @@ export class GoodMinton extends Scene {
         let p1_raquet_handle_color = hex_color("#6488ea");
 
         let p1_racket_handle_transform = Mat4.identity().times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-        this.shapes.racket_handle.draw(context, program_state, p1_racket_handle_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+        this.shapes.cylinder.draw(context, program_state, p1_racket_handle_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
 
         let p1_racket_head_transform = Mat4.identity().times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
-        this.shapes.racket_head.draw(context, program_state, p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+        this.shapes.cylinder.draw(context, program_state, p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
 
         let p2_raquet_handle_color = hex_color("#f1807e");
 
         let p2_racket_handle_transform = Mat4.identity().times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-        this.shapes.racket_handle.draw(context, program_state, p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+        this.shapes.cylinder.draw(context, program_state, p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
 
         let p2_racket_head_transform = Mat4.identity().times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
-        this.shapes.racket_head.draw(context, program_state, p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+        this.shapes.cylinder.draw(context, program_state, p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+
+        let net_color = hex_color("ffff00")
+
+        let net_pole1_transform = Mat4.identity().times(Mat4.translation(0,-2,9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.cylinder.draw(context, program_state, net_pole1_transform, this.materials.plastic.override({color: net_color}));
+
+        let net_pole2_transform = Mat4.identity().times(Mat4.translation(0,-2,-9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.cylinder.draw(context, program_state, net_pole2_transform, this.materials.plastic.override({color: net_color}));
 
 
         if(this.attached !== undefined){
