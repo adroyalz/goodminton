@@ -9,16 +9,16 @@ class Cube extends Shape {
         super("position", "normal",);
         // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
         this.arrays.position = Vector3.cast(
-            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1], [1, 2, -1], [-1, 2, -1], [1, 2, 1], [-1, 2, 1],
-            [-1, -1, -1], [-1, -1, 1], [-1, 2, -1], [-1, 2, 1], [1, -1, 1], [1, -1, -1], [1, 2, 1], [1, 2, -1],
-            [-1, -1, 1], [1, -1, 1], [-1, 2, 1], [1, 2, 1], [1, -1, -1], [-1, -1, -1], [1, 2, -1], [-1, 2, -1]);
+            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, -1], [-1, 1, -1], [1, 1, 1], [-1, 1, 1],
+            [-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, 1], [1, -1, -1], [1, 1, 1], [1, 1, -1],
+            [-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1], [1, -1, -1], [-1, -1, -1], [1, 1, -1], [-1, 1, -1]);
         this.arrays.normal = Vector3.cast(
             [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0],
+            [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0],
             [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, -1], [0, 0, -1], [0, 0, -1], [0, 0, -1]);
         // Arrange the vertices into a square shape in texture space too:
         this.indices.push(0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6, 8, 9, 10, 9, 11, 10, 12, 13,
             14, 13, 15, 14, 16, 17, 18, 17, 19, 18, 20, 21, 22, 21, 23, 22);
-
     }
 }
 export class GoodMinton extends Scene {
@@ -38,7 +38,7 @@ export class GoodMinton extends Scene {
             flatSphere1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
             flatSphere2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             circle: new defs.Regular_2D_Polygon(1, 15),
-            cube: new Cube(),
+            'cube': new Cube(),
             cork: new (defs.Subdivision_Sphere)(4),
         };
 
@@ -66,6 +66,10 @@ export class GoodMinton extends Scene {
             ring: new Material(new Ring_Shader()),
             plastic: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
+            ground: new Material(new defs.Phong_Shader(),
+                {ambient: .5, diffusivity: .6, color: hex_color("#44693D")}),
+            day_back: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: .6, color: hex_color("#7BB2DD")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -99,9 +103,15 @@ export class GoodMinton extends Scene {
     }
 
     draw_floor(context, program_state){
-        let floor_transform = Mat4.identity().times(Mat4.translation(0, -5, 0)).times(Mat4.scale(10,0.5, 10));
-        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.plastic);
+        let floor_transform = Mat4.identity().times(Mat4.translation(0, -5, 0)).times(Mat4.scale(100,0.5, 50));
+        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.ground);
     }
+
+    draw_bg(context, program_state){
+        let bg_transform = Mat4.identity().times(Mat4.translation(0, 5, -10)).times(Mat4.scale(100, 10, 0));
+        this.shapes.cube.draw(context, program_state, bg_transform, this.materials.day_back);
+    }
+
 
     display(context, program_state) {
         // display():  Called once per frame of animation.
@@ -122,7 +132,7 @@ export class GoodMinton extends Scene {
         this.update_state();
         this.draw_floor(context, program_state);
         this.draw_ball(context, program_state);
-
+        this.draw_bg(context, program_state);
 
     }
 }
