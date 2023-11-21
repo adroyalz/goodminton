@@ -4,21 +4,24 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+const GRAVITY = .01;
+const ELASTICITY = 0.8;
+
 class Cube extends Shape {
     constructor() {
         super("position", "normal",);
         // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
         this.arrays.position = Vector3.cast(
-            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, -1], [-1, 1, -1], [1, 1, 1], [-1, 1, 1],
-            [-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, 1], [1, -1, -1], [1, 1, 1], [1, 1, -1],
-            [-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1], [1, -1, -1], [-1, -1, -1], [1, 1, -1], [-1, 1, -1]);
+            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1], [1, 2, -1], [-1, 2, -1], [1, 2, 1], [-1, 2, 1],
+            [-1, -1, -1], [-1, -1, 1], [-1, 2, -1], [-1, 2, 1], [1, -1, 1], [1, -1, -1], [1, 2, 1], [1, 2, -1],
+            [-1, -1, 1], [1, -1, 1], [-1, 2, 1], [1, 2, 1], [1, -1, -1], [-1, -1, -1], [1, 2, -1], [-1, 2, -1]);
         this.arrays.normal = Vector3.cast(
             [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0],
-            [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0],
             [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, -1], [0, 0, -1], [0, 0, -1], [0, 0, -1]);
         // Arrange the vertices into a square shape in texture space too:
         this.indices.push(0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6, 8, 9, 10, 9, 11, 10, 12, 13,
             14, 13, 15, 14, 16, 17, 18, 17, 19, 18, 20, 21, 22, 21, 23, 22);
+
     }
 }
 export class GoodMinton extends Scene {
@@ -26,7 +29,10 @@ export class GoodMinton extends Scene {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
-        this.cork_coord = [0.0,0.0,0.0]
+        this.ball_rad = 3;
+        this.cork_coord = [0.0,0.0,0.0];
+        this.floor_coord = [0.0,-5.0,0.0];
+        this.floor_scale = [10.0,1.0,10.0]
         this.cork_vel = [0.0,0.0,0.0];
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -38,8 +44,9 @@ export class GoodMinton extends Scene {
             flatSphere1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
             flatSphere2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             circle: new defs.Regular_2D_Polygon(1, 15),
-            'cube': new Cube(),
+            cube: new Cube(),
             cork: new (defs.Subdivision_Sphere)(4),
+            cylinder: new defs.Rounded_Capped_Cylinder(50, 50),
         };
 
         // *** Materials
@@ -90,11 +97,27 @@ export class GoodMinton extends Scene {
 
     update_state(){
         //update velocity based on gravity
-        this.cork_vel[1] -= 0.01;
+        if (this.cork_coord[1] > this.floor_coord[1] + this.ball_rad)
+            this.cork_vel[1] -= GRAVITY;
+        //update velocity based on collisions
+        if(this.check_collision_ground() && this.cork_vel[1] < 0){
+            for (let i = 0; i < this.cork_vel.length; i++) {
+                this.cork_vel[i] *= -ELASTICITY;
+            }
+        }
         //update coordinates based on velocity
         this.cork_coord[0] += this.cork_vel[0];
         this.cork_coord[1] += this.cork_vel[1];
         this.cork_coord[2] += this.cork_vel[2];
+    }
+
+    check_collision_ground(){
+        if (this.cork_coord[1] <= this.floor_coord[1] + this.ball_rad){
+            return true;
+        }
+        else{
+            return false
+        }
     }
 
     draw_ball(context, program_state){
@@ -105,6 +128,8 @@ export class GoodMinton extends Scene {
     draw_floor(context, program_state){
         let floor_transform = Mat4.identity().times(Mat4.translation(0, -5, 0)).times(Mat4.scale(100,0.5, 50));
         this.shapes.cube.draw(context, program_state, floor_transform, this.materials.ground);
+        let floor_transform = Mat4.identity().times(Mat4.translation(this.floor_coord[0], this.floor_coord[1], this.floor_coord[2])).times(Mat4.scale(this.floor_scale[0], this.floor_scale[1], this.floor_scale[2]));
+        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.plastic);
     }
 
     draw_bg(context, program_state){
@@ -134,6 +159,36 @@ export class GoodMinton extends Scene {
         this.draw_ball(context, program_state);
         this.draw_bg(context, program_state);
 
+        let p1_raquet_handle_color = hex_color("#6488ea");
+
+        let p1_racket_handle_transform = Mat4.identity().times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.cylinder.draw(context, program_state, p1_racket_handle_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+
+        let p1_racket_head_transform = Mat4.identity().times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+        this.shapes.cylinder.draw(context, program_state, p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+
+        let p2_raquet_handle_color = hex_color("#f1807e");
+
+        let p2_racket_handle_transform = Mat4.identity().times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.cylinder.draw(context, program_state, p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+
+        let p2_racket_head_transform = Mat4.identity().times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+        this.shapes.cylinder.draw(context, program_state, p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+
+        let net_color = hex_color("ffff00")
+
+        let net_pole1_transform = Mat4.identity().times(Mat4.translation(0,-2,9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.cylinder.draw(context, program_state, net_pole1_transform, this.materials.plastic.override({color: net_color}));
+
+        let net_pole2_transform = Mat4.identity().times(Mat4.translation(0,-2,-9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.cylinder.draw(context, program_state, net_pole2_transform, this.materials.plastic.override({color: net_color}));
+
+
+        if(this.attached !== undefined){
+            let desired = Mat4.inverse(this.attached().times(Mat4.translation(0, 0, 5)));
+            let blending_factor = 0.1;
+            program_state.set_camera(desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor)));
+        }
     }
 }
 
