@@ -26,6 +26,9 @@ export class GoodMinton extends Scene {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
+        this.cork_coord = [0.0,0.0,0.0]
+        this.cork_vel = [0.0,0.0,0.0];
+
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
             torus: new defs.Torus(15, 15),
@@ -37,7 +40,8 @@ export class GoodMinton extends Scene {
             circle: new defs.Regular_2D_Polygon(1, 15),
             cube: new Cube(),
             cork: new (defs.Subdivision_Sphere)(4),
-            racket_handle: new defs.Rounded_Capped_Cylinder(50, 50)
+            racket_handle: new defs.Rounded_Capped_Cylinder(50, 50),
+            racket_head: new defs.Rounded_Capped_Cylinder(50, 50)
         };
 
         // *** Materials
@@ -82,6 +86,25 @@ export class GoodMinton extends Scene {
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
     }
 
+    update_state(){
+        //update velocity based on gravity
+        this.cork_vel[1] -= 0.01;
+        //update coordinates based on velocity
+        this.cork_coord[0] += this.cork_vel[0];
+        this.cork_coord[1] += this.cork_vel[1];
+        this.cork_coord[2] += this.cork_vel[2];
+    }
+
+    draw_ball(context, program_state){
+        let cork_transform = Mat4.identity().times(Mat4.translation(this.cork_coord[0], this.cork_coord[1], this.cork_coord[2]));
+        this.shapes.cork.draw(context, program_state, cork_transform, this.materials.plastic);
+    }
+
+    draw_floor(context, program_state){
+        let floor_transform = Mat4.identity().times(Mat4.translation(0, -5, 0)).times(Mat4.scale(10,0.5, 10));
+        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.plastic);
+    }
+
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
@@ -98,16 +121,25 @@ export class GoodMinton extends Scene {
         const light_position = vec4(0, 5, 5, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
-        let floor_transform = Mat4.identity().times(Mat4.translation(0, -5, 0)).times(Mat4.scale(10,0.5, 10));
-        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.plastic);
+        this.update_state();
+        this.draw_floor(context, program_state);
+        this.draw_ball(context, program_state);
 
-        let corkX = 10*Math.sin(t);
-        let corkY = 4+2*Math.sin(1.8*t+2.7*Math.PI);
-        let cork_transform = Mat4.identity().times(Mat4.translation(10*Math.sin(t), corkY, 0)).times(Mat4.scale(.5, .5, 0.5));
-        this.shapes.cork.draw(context, program_state, cork_transform, this.materials.plastic);
+        let p1_raquet_handle_color = hex_color("#6488ea");
 
-        let racket_handle_transform = Mat4.identity().times(Mat4.scale(0.5,2,0.5)).times(Mat4.rotation(Math.PI/2, 1,0,0)).times(Mat4.translation(-5,-10,0));
-        this.shapes.racket_handle.draw(context, program_state, racket_handle_transform, this.materials.plastic);
+        let p1_racket_handle_transform = Mat4.identity().times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.racket_handle.draw(context, program_state, p1_racket_handle_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+
+        let p1_racket_head_transform = Mat4.identity().times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+        this.shapes.racket_head.draw(context, program_state, p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+
+        let p2_raquet_handle_color = hex_color("#f1807e");
+
+        let p2_racket_handle_transform = Mat4.identity().times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.racket_handle.draw(context, program_state, p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+
+        let p2_racket_head_transform = Mat4.identity().times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+        this.shapes.racket_head.draw(context, program_state, p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
 
 
         if(this.attached !== undefined){
