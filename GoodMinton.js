@@ -12,11 +12,12 @@ class Cube extends Shape {
         super("position", "normal",);
         // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
         this.arrays.position = Vector3.cast(
-            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1], [1, 2, -1], [-1, 2, -1], [1, 2, 1], [-1, 2, 1],
-            [-1, -1, -1], [-1, -1, 1], [-1, 2, -1], [-1, 2, 1], [1, -1, 1], [1, -1, -1], [1, 2, 1], [1, 2, -1],
-            [-1, -1, 1], [1, -1, 1], [-1, 2, 1], [1, 2, 1], [1, -1, -1], [-1, -1, -1], [1, 2, -1], [-1, 2, -1]);
+            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, -1], [-1, 1, -1], [1, 1, 1], [-1, 1, 1],
+            [-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, 1], [1, -1, -1], [1, 1, 1], [1, 1, -1],
+            [-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1], [1, -1, -1], [-1, -1, -1], [1, 1, -1], [-1, 1, -1]);
         this.arrays.normal = Vector3.cast(
             [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0],
+            [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0],
             [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, -1], [0, 0, -1], [0, 0, -1], [0, 0, -1]);
         // Arrange the vertices into a square shape in texture space too:
         this.indices.push(0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6, 8, 9, 10, 9, 11, 10, 12, 13,
@@ -32,7 +33,7 @@ export class GoodMinton extends Scene {
         this.ball_rad = 3;
         this.cork_coord = [0.0,0.0,0.0];
         this.floor_coord = [0.0,-5.0,0.0];
-        this.floor_scale = [10.0,1.0,10.0]
+        this.floor_scale = [100,1.0,50.0]
         this.cork_vel = [0.0,0.0,0.0];
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -44,7 +45,7 @@ export class GoodMinton extends Scene {
             flatSphere1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
             flatSphere2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             circle: new defs.Regular_2D_Polygon(1, 15),
-            cube: new Cube(),
+            'cube': new Cube(),
             cork: new (defs.Subdivision_Sphere)(4),
             cylinder: new defs.Rounded_Capped_Cylinder(50, 50),
         };
@@ -126,10 +127,8 @@ export class GoodMinton extends Scene {
     }
 
     draw_floor(context, program_state){
-        let floor_transform = Mat4.identity().times(Mat4.translation(0, -5, 0)).times(Mat4.scale(100,0.5, 50));
-        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.ground);
         let floor_transform = Mat4.identity().times(Mat4.translation(this.floor_coord[0], this.floor_coord[1], this.floor_coord[2])).times(Mat4.scale(this.floor_scale[0], this.floor_scale[1], this.floor_scale[2]));
-        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.plastic);
+        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.ground);
     }
 
     draw_bg(context, program_state){
