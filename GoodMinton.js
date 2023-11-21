@@ -4,6 +4,9 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+const GRAVITY = .01;
+const ELASTICITY = 0.8;
+
 class Cube extends Shape {
     constructor() {
         super("position", "normal",);
@@ -26,7 +29,10 @@ export class GoodMinton extends Scene {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
-        this.cork_coord = [0.0,0.0,0.0]
+        this.ball_rad = 3;
+        this.cork_coord = [0.0,0.0,0.0];
+        this.floor_coord = [0.0,-5.0,0.0];
+        this.floor_scale = [10.0,1.0,10.0]
         this.cork_vel = [0.0,0.0,0.0];
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -84,13 +90,31 @@ export class GoodMinton extends Scene {
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
     }
 
+
+
     update_state(){
         //update velocity based on gravity
-        this.cork_vel[1] -= 0.01;
+        if (this.cork_coord[1] > this.floor_coord[1] + this.ball_rad)
+            this.cork_vel[1] -= GRAVITY;
+        //update velocity based on collisions
+        if(this.check_collision_ground() && this.cork_vel[1] < 0){
+            for (let i = 0; i < this.cork_vel.length; i++) {
+                this.cork_vel[i] *= -ELASTICITY;
+            }
+        }
         //update coordinates based on velocity
         this.cork_coord[0] += this.cork_vel[0];
         this.cork_coord[1] += this.cork_vel[1];
         this.cork_coord[2] += this.cork_vel[2];
+    }
+
+    check_collision_ground(){
+        if (this.cork_coord[1] <= this.floor_coord[1] + this.ball_rad){
+            return true;
+        }
+        else{
+            return false
+        }
     }
 
     draw_ball(context, program_state){
@@ -99,7 +123,7 @@ export class GoodMinton extends Scene {
     }
 
     draw_floor(context, program_state){
-        let floor_transform = Mat4.identity().times(Mat4.translation(0, -5, 0)).times(Mat4.scale(10,0.5, 10));
+        let floor_transform = Mat4.identity().times(Mat4.translation(this.floor_coord[0], this.floor_coord[1], this.floor_coord[2])).times(Mat4.scale(this.floor_scale[0], this.floor_scale[1], this.floor_scale[2]));
         this.shapes.cube.draw(context, program_state, floor_transform, this.materials.plastic);
     }
 
