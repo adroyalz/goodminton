@@ -37,6 +37,7 @@ export class GoodMinton extends Scene {
             circle: new defs.Regular_2D_Polygon(1, 15),
             cube: new Cube(),
             cork: new (defs.Subdivision_Sphere)(4),
+            racket_handle: new defs.Rounded_Capped_Cylinder(50, 50)
         };
 
         // *** Materials
@@ -104,6 +105,10 @@ export class GoodMinton extends Scene {
         let corkY = 4+2*Math.sin(1.8*t+2.7*Math.PI);
         let cork_transform = Mat4.identity().times(Mat4.translation(10*Math.sin(t), corkY, 0)).times(Mat4.scale(.5, .5, 0.5));
         this.shapes.cork.draw(context, program_state, cork_transform, this.materials.plastic);
+
+        let racket_handle_transform = Mat4.identity().times(Mat4.scale(0.5,2,0.5)).times(Mat4.rotation(Math.PI/2, 1,0,0)).times(Mat4.translation(-5,-10,0));
+        this.shapes.racket_handle.draw(context, program_state, racket_handle_transform, this.materials.plastic);
+
 
         if(this.attached !== undefined){
             let desired = Mat4.inverse(this.attached().times(Mat4.translation(0, 0, 5)));
