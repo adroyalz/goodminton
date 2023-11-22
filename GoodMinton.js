@@ -31,10 +31,10 @@ export class GoodMinton extends Scene {
         super();
 
         this.ball_rad = 3;
-        this.cork_coord = [0.0,0.0,0.0];
+        this.cork_coord = [-8.0,-2.0,-2.0];
         this.floor_coord = [0.0,-5.0,0.0];
         this.floor_scale = [100,1.0,50.0]
-        this.cork_vel = [0.0,0.0,0.0];
+        this.cork_vel = [0.1,0.3,0.0];
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
@@ -102,9 +102,7 @@ export class GoodMinton extends Scene {
             this.cork_vel[1] -= GRAVITY;
         //update velocity based on collisions
         if(this.check_collision_ground() && this.cork_vel[1] < 0){
-            for (let i = 0; i < this.cork_vel.length; i++) {
-                this.cork_vel[i] *= -ELASTICITY;
-            }
+            this.cork_vel[1] *= -ELASTICITY;
         }
         //update coordinates based on velocity
         this.cork_coord[0] += this.cork_vel[0];
