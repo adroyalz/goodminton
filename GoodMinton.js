@@ -40,7 +40,9 @@ export class GoodMinton extends Scene {
         this.cork_coord = [3.5,-2.0,-5.0];
         this.cork_vel = [0.1,0.3,0.1];
         this.floor_coord = [0.0,-5.0,0.0];
-        this.floor_scale = [100,1.0,50.0]
+        this.floor_scale = [100,1.0,50.0];
+        this.rain = [];
+        this.raining = false;
 
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -55,6 +57,7 @@ export class GoodMinton extends Scene {
             'cube': new Cube(),
             cork: new (defs.Subdivision_Sphere)(4),
             cylinder: new defs.Rounded_Capped_Cylinder(50, 50),
+            raindrop: new (defs.Subdivision_Sphere)(4),
         };
 
         // *** Materials
@@ -85,6 +88,8 @@ export class GoodMinton extends Scene {
                 {ambient: .5, diffusivity: .6, color: hex_color("#44693D")}),
             day_back: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#7BB2DD")}),
+            raindrop: new Material(new defs.Phong_Shader(),
+                {diffusivity: 1, color: hex_color("#6488ea")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -92,6 +97,9 @@ export class GoodMinton extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
+        this.key_triggered_button("Turn rain on", ["r"], () => {
+            this.raining = !this.raining;
+        });
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => Mat4.inverse(this.initial_camera_location).times(Mat4.translation(0,0,-5)));
         this.new_line();
         this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
@@ -161,6 +169,43 @@ export class GoodMinton extends Scene {
         this.shapes.cube.draw(context, program_state, bg_transform, this.materials.day_back);
     }
 
+    draw_rain(context, program_state, t, temp){
+        if(!this.raining){
+            return;
+        }
+        let rain_scale = 0.05;
+        let num_drops = 2000;
+        let max_height = 20;
+
+        //initially
+        if(this.rain.length === 0){
+            //fill the rain array with x,y,z locations (every 3rd element of the array starts a new raindrop)
+            for(let i=0; i<num_drops; i++){
+                let rand_pos_x = Math.random()*200-100;
+                let rand_pos_y = Math.random()*max_height;
+                let rand_pos_z = Math.random()*100-50;
+                this.rain.push(rand_pos_x, rand_pos_y, rand_pos_z);
+            }
+        }
+        //draw raindrops
+        for(let i=0; i<num_drops*3; i+=3){
+            //decrement y
+            this.rain[i + 1] = this.rain[i + 1] - 1;
+
+            let rain_transform = Mat4.identity().times(Mat4.translation(this.rain[i], this.rain[i+1], this.rain[i+2])).times(Mat4.scale(rain_scale, rain_scale, rain_scale));
+            this.shapes.raindrop.draw(context, program_state, rain_transform, this.materials.raindrop);
+            //if the drop hits the ground
+            if(this.rain[i+1] <= 0){
+                //create a new random raindrop by randomizing the x,z coordinates again and put it at max height
+                this.rain[i] = Math.random()*200-100;
+                this.rain[i+1] = Math.random()*max_height;
+                this.rain[i+2] = Math.random()*100-50;
+
+            }
+        }
+
+    }
+
 
     display(context, program_state) {
         // display():  Called once per frame of animation.
@@ -182,6 +227,7 @@ export class GoodMinton extends Scene {
         this.draw_floor(context, program_state);
         this.draw_ball(context, program_state);
         this.draw_bg(context, program_state);
+        this.draw_rain(context, program_state, t);
 
         let p1_raquet_handle_color = hex_color("#6488ea");
 
