@@ -43,6 +43,7 @@ export class GoodMinton extends Scene {
         this.floor_scale = [100,1.0,50.0];
         this.rain = [];
         this.raining = false;
+        this.thundering = true;
 
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -174,7 +175,7 @@ export class GoodMinton extends Scene {
             return;
         }
         let rain_scale = 0.05;
-        let num_drops = 2000;
+        let num_drops = 500;
         let max_height = 20;
 
         //initially
@@ -200,7 +201,6 @@ export class GoodMinton extends Scene {
                 this.rain[i] = Math.random()*200-100;
                 this.rain[i+1] = Math.random()*max_height;
                 this.rain[i+2] = Math.random()*100-50;
-
             }
         }
 
@@ -220,9 +220,25 @@ export class GoodMinton extends Scene {
             Math.PI / 4, context.width / context.height, .1, 1000);
 
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        const light_position = vec4(0, 5, 5, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
-
+        if(this.raining) {
+            const light_position = vec4(0, 10, 0, 1);
+            const lightning = new Light(light_position, color(1,1,1,1), 1000);
+            if(Math.random() < 0.01){
+                this.thundering = !this.thundering;
+                program_state.lights = [lightning];
+            }
+            else if(this.thundering){
+                program_state.lights = [lightning];
+                this.thundering = !this.thundering;
+            }
+            else{
+                program_state.lights = [new Light(light_position, color(1,1,1,1), 10)];
+            }
+        }
+        else{
+            const light_position = vec4(0, 5, 5, 1);
+            program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+        }
         this.update_state();
         this.draw_floor(context, program_state);
         this.draw_ball(context, program_state);
