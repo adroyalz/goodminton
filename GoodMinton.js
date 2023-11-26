@@ -44,6 +44,9 @@ export class GoodMinton extends Scene {
         this.rain = [];
         this.raining = false;
         this.thundering = true;
+        this.p2_hitting = false;
+        this.p2_crossed_0 = false;
+        this.p2_hitting_start_t = -1;
 
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -101,15 +104,13 @@ export class GoodMinton extends Scene {
         this.key_triggered_button("Turn rain on", ["r"], () => {
             this.raining = !this.raining;
         });
+        this.key_triggered_button("HIT", [" "],  () => {
+            this.p2_hitting = true;
+            this.record_hit_time("p2", );
+        });
+        this.new_line();
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => Mat4.inverse(this.initial_camera_location).times(Mat4.translation(0,0,-5)));
-        this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        this.new_line();
-        this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+
     }
 
     update_state(){
@@ -206,6 +207,75 @@ export class GoodMinton extends Scene {
 
     }
 
+    draw_racket(context, program_state, t){
+        let p1_raquet_handle_color = hex_color("#6488ea");
+        let p2_raquet_handle_color = hex_color("#f1807e");
+        let origin_vec4 = vec4(0,0,0,1.0)
+
+        let t_diff = t - this.p2_hitting_start_t;
+        let speed_multiplier = 10;
+        let angle = (-Math.PI/4)*(Math.sin(speed_multiplier*t_diff));
+
+        if(!this.p2_hitting){
+            let p1_racket_handle_transform = Mat4.identity().times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+            this.p1_racket_handle_pos = p1_racket_handle_transform.times(origin_vec4);
+            this.shapes.cylinder.draw(context, program_state, p1_racket_handle_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+            let p1_racket_head_transform = Mat4.identity().times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+            this.p1_racket_head_pos = p1_racket_head_transform.times(origin_vec4);
+            this.shapes.cylinder.draw(context, program_state, p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+
+            let p2_racket_handle_transform = Mat4.identity().times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+            this.p2_racket_handle_pos = p2_racket_handle_transform.times(origin_vec4);
+            this.shapes.cylinder.draw(context, program_state, p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+            let p2_racket_head_transform = Mat4.identity().times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+            this.p2_racket_head_pos = p2_racket_head_transform.times(origin_vec4);
+            this.shapes.cylinder.draw(context, program_state, p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+        }
+        //if player 2 is hitting
+        else{
+            //record hit start time
+            if(this.p2_hitting_start_t === -1){
+                this.p2_hitting_start_t = t;
+            }
+            //draw p1 as normal
+            let p1_racket_handle_transform = Mat4.identity().times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+            this.p1_racket_handle_pos = p1_racket_handle_transform.times(origin_vec4);
+            this.shapes.cylinder.draw(context, program_state, p1_racket_handle_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+            let p1_racket_head_transform = Mat4.identity().times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+            this.p1_racket_head_pos = p1_racket_head_transform.times(origin_vec4);
+            this.shapes.cylinder.draw(context, program_state, p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+
+            //rotate p2 to simulate hitting
+            let p2_racket_handle_transform = Mat4.identity().times(Mat4.translation(10,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(-10,1.5,0)).times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+            this.p2_racket_handle_pos = p2_racket_handle_transform.times(origin_vec4);
+            this.shapes.cylinder.draw(context, program_state, p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+
+            let p2_racket_head_transform = Mat4.identity().times(Mat4.translation(10,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(-10,1.5,0)).times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+            this.p2_racket_head_pos = p2_racket_head_transform.times(origin_vec4);
+            this.shapes.cylinder.draw(context, program_state, p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+            if(t_diff >= Math.PI/(speed_multiplier/2)-0.05){
+                if(this.p2_crossed_0){
+                    this.p2_hitting = false;
+                    this.p2_crossed_0 = false;
+                    this.p2_hitting_start_t = -1;
+                }
+                else{
+                    this.p2_crossed_0 = true;
+                }
+            }
+        }
+    }
+
+    draw_net(context, program_state){
+        let net_color = hex_color("ffff00")
+
+        let net_pole1_transform = Mat4.identity().times(Mat4.translation(0,-2,9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.cylinder.draw(context, program_state, net_pole1_transform, this.materials.plastic.override({color: net_color}));
+
+        let net_pole2_transform = Mat4.identity().times(Mat4.translation(0,-2,-9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.shapes.cylinder.draw(context, program_state, net_pole2_transform, this.materials.plastic.override({color: net_color}));
+    }
+
 
     display(context, program_state) {
         // display():  Called once per frame of animation.
@@ -221,9 +291,9 @@ export class GoodMinton extends Scene {
 
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         if(this.raining) {
-            const light_position = vec4(0, 10, 0, 1);
-            const lightning = new Light(light_position, color(1,1,1,1), 1000);
-            if(Math.random() < 0.01){
+            const light_position = vec4(0, 10, 0, 0);
+            const lightning = new Light(light_position, color(0.47,0.47,.47,1), 1000);
+            if(100*Math.random() < 0.5){
                 this.thundering = !this.thundering;
                 program_state.lights = [lightning];
             }
@@ -244,35 +314,8 @@ export class GoodMinton extends Scene {
         this.draw_ball(context, program_state);
         this.draw_bg(context, program_state);
         this.draw_rain(context, program_state, t);
-
-        let p1_raquet_handle_color = hex_color("#6488ea");
-
-        let origin_vec4 = vec4(0,0,0,1.0)
-        let p1_racket_handle_transform = Mat4.identity().times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-        this.p1_racket_handle_pos = p1_racket_handle_transform.times(origin_vec4);
-        this.shapes.cylinder.draw(context, program_state, p1_racket_handle_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
-
-        let p1_racket_head_transform = Mat4.identity().times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
-        this.p1_racket_head_pos = p1_racket_head_transform.times(origin_vec4);
-        this.shapes.cylinder.draw(context, program_state, p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
-
-        let p2_raquet_handle_color = hex_color("#f1807e");
-
-        let p2_racket_handle_transform = Mat4.identity().times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-        this.p2_racket_handle_pos = p2_racket_handle_transform.times(origin_vec4);
-        this.shapes.cylinder.draw(context, program_state, p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
-
-        let p2_racket_head_transform = Mat4.identity().times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
-        this.p2_racket_head_pos = p2_racket_head_transform.times(origin_vec4);
-        this.shapes.cylinder.draw(context, program_state, p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
-
-        let net_color = hex_color("ffff00")
-
-        let net_pole1_transform = Mat4.identity().times(Mat4.translation(0,-2,9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-        this.shapes.cylinder.draw(context, program_state, net_pole1_transform, this.materials.plastic.override({color: net_color}));
-
-        let net_pole2_transform = Mat4.identity().times(Mat4.translation(0,-2,-9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-        this.shapes.cylinder.draw(context, program_state, net_pole2_transform, this.materials.plastic.override({color: net_color}));
+        this.draw_racket(context, program_state, t);
+        this.draw_net(context, program_state);
 
 
         if(this.attached !== undefined){
