@@ -101,7 +101,8 @@ export class GoodMinton extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Turn rain on", ["r"], () => {
+        //Vikram changed this from button r -> b since r forces camera to the origin
+        this.key_triggered_button("Turn rain on", ["b"], () => {
             this.raining = !this.raining;
         });
         this.key_triggered_button("HIT", [" "],  () => {
@@ -267,13 +268,30 @@ export class GoodMinton extends Scene {
     }
 
     draw_net(context, program_state){
-        let net_color = hex_color("ffff00")
+        let net_color = hex_color("ffff00");
+        let mesh_color = hex_color("ffffff");
 
         let net_pole1_transform = Mat4.identity().times(Mat4.translation(0,-2,9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
         this.shapes.cylinder.draw(context, program_state, net_pole1_transform, this.materials.plastic.override({color: net_color}));
 
         let net_pole2_transform = Mat4.identity().times(Mat4.translation(0,-2,-9)).times(Mat4.scale(0.25,5,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
         this.shapes.cylinder.draw(context, program_state, net_pole2_transform, this.materials.plastic.override({color: net_color}));
+
+        //3 horizontal lines for net 
+        let net_mesh_transform_horizontal = Mat4.identity().times(Mat4.scale(0.1, 0.1, 18));
+        this.shapes.cylinder.draw(context, program_state, net_mesh_transform_horizontal, this.materials.plastic.override({color: mesh_color}));
+        net_mesh_transform_horizontal = net_mesh_transform_horizontal.times(Mat4.translation(0, -7, 0));
+        this.shapes.cylinder.draw(context, program_state, net_mesh_transform_horizontal, this.materials.plastic.override({color: mesh_color}));
+        net_mesh_transform_horizontal = net_mesh_transform_horizontal.times(Mat4.translation(0, -7, 0));
+        this.shapes.cylinder.draw(context, program_state, net_mesh_transform_horizontal, this.materials.plastic.override({color: mesh_color}));
+        net_mesh_transform_horizontal = net_mesh_transform_horizontal.times(Mat4.translation(0, -7, 0));
+        this.shapes.cylinder.draw(context, program_state, net_mesh_transform_horizontal, this.materials.plastic.override({color: mesh_color}));
+
+        //6 vertical lines to make criss-cross mesh pattern
+        for(let i = 0; i < 17; i++) {
+            let net_mesh_transform_vertical = Mat4.identity().times(Mat4.translation(0, -1, 8 - i)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.1, 0.1, 2.1));
+            this.shapes.cylinder.draw(context, program_state, net_mesh_transform_vertical, this.materials.plastic.override({color: mesh_color}));
+        }
     }
 
 
