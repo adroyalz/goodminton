@@ -37,8 +37,10 @@ export class GoodMinton extends Scene {
         this.p1_racket_handle_pos = 0;
         this.p2_racket_head_pos = 0;
         this.p2_racket_handle_pos = 0;
-        this.cork_coord = [3.5,-2.0,-5.0];
-        this.cork_vel = [0.1,0.3,0.1];
+        // this.cork_coord = [3.5,-2.0,-5.0];
+        // this.cork_vel = [0.1,0.3,0.1];
+        this.cork_coord = [0,5.0,0];
+        this.cork_vel = [0.2,0.1,0];
         this.floor_coord = [0.0,-5.0,0.0];
         this.floor_scale = [100,1.0,50.0];
         this.rain = [];
@@ -97,6 +99,7 @@ export class GoodMinton extends Scene {
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        //this.attached = () => this.p2pos;
     }
 
     make_control_panel() {
@@ -106,12 +109,17 @@ export class GoodMinton extends Scene {
             this.raining = !this.raining;
         });
         this.key_triggered_button("HIT", [" "],  () => {
-            this.p2_hitting = true;
-            this.record_hit_time("p2", );
+            if(!this.p2_hitting) {
+                this.p2_hitting = true;
+            }
+            //this.record_hit_time("p2", );
         });
         this.new_line();
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => Mat4.inverse(this.initial_camera_location).times(Mat4.translation(0,0,-5)));
-
+        this.key_triggered_button("Player View", ["Control", "0"], () => this.attached = () => this.p2pos); //Mat4.inverse(this.initial_camera_location).times(Mat4.rotation(Math.PI/2, 0,1,0)).times(Mat4.translation(0,0,10)));
+        this.key_triggered_button("reset cork", ["t"],  () => {
+            this.cork_coord = [0,5.0,0];
+            this.cork_vel = [0.2,0.1,0];
+        });
     }
 
     update_state(){
@@ -123,7 +131,7 @@ export class GoodMinton extends Scene {
             this.cork_vel[1] *= -ELASTICITY;
         }
         if(this.check_collision_racket_p2() && this.cork_vel[0] > 0){  //second term is to remove bugs when objects overlap
-            this.cork_vel[0] *= -1.0;
+            this.cork_vel[0] *= -10.0;
         }
         // console.log("cork_pos", this.cork_coord + this.ball_rad);
         // console.log("head_pos",this.p1_racket_head_pos);
@@ -238,6 +246,8 @@ export class GoodMinton extends Scene {
             let p2_racket_head_transform = Mat4.identity().times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
             this.p2_racket_head_pos = p2_racket_head_transform.times(origin_vec4);
             this.shapes.cylinder.draw(context, program_state, p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
+
+            this.p2pos = p2_racket_head_transform;
         }
         //if player 2 is hitting
         else{
@@ -271,7 +281,9 @@ export class GoodMinton extends Scene {
                     this.p2_crossed_0 = true;
                 }
             }
+            this.p2pos = p2_racket_head_transform;
         }
+        this.p2pos = this.p2pos.times(Mat4.translation(0, 3, 7));
     }
 
     draw_net(context, program_state){
