@@ -200,17 +200,40 @@ export class GoodMinton extends Scene {
         }
     }
     check_collision_racket_p2(){
-        if (this.cork_coord[0] + this.ball_rad - 0.5 >= this.p2_racket_head_pos[0]    //TODO::magic number is to bound collision box
-            && this.cork_coord[0] + this.ball_rad <= this.p2_racket_head_pos[0] + 1 //TODO::magic number is to bound collision box
-            && this.cork_coord[1] >= this.p2_racket_head_pos[1] - RACKET_HEAD_LENGTH/2.0
-            && this.cork_coord[1] <= this.p2_racket_head_pos[1] + RACKET_HEAD_LENGTH/2.0
-            && this.cork_coord[2] >= this.p2_racket_head_pos[1] - RACKET_HEAD_WIDTH/2.0
-            && this.cork_coord[2] <= this.p2_racket_head_pos[1] + RACKET_HEAD_WIDTH/2.0
-        ){
-            return true;
+        //change x and y based on angle to make swinging actually do something
+        //ex) at pi/4, x must be == y if origin is the center of the racket and y must be == x
+        // --------> so if the racket is at pi/4 the ball must have x > racketY and y> racketX
+        //including the .5 and 1 magic numbers,
+        //ex) at theta, y must == tan(theta)x + .5 and x must == 1/tan(theta) (y-.5)
+        //------------> so if the racket is at theta the ball must have y>tan(theta)racketX+.5 and x>1/tan(theta) (racketY-.5)
+        //and also y<tan(theta)racketX+1 and x<1/tan(theta) (racketY-1)
+
+        //RACKET_HEAD_LENGTH might have to be part of the equation or reduce magic numbers to reduce the weird hitbox?
+        if(this.p2_hitting) {
+            if (this.cork_coord[0] + this.ball_rad >= ((1 / Math.tan(this.p2racketAngle)) * (this.p2_racket_head_pos[1] - 0.5))    //TODO::magic number is to bound collision box
+                && this.cork_coord[0] + this.ball_rad <= ((1 / Math.tan(this.p2racketAngle)) * (this.p2_racket_head_pos[1] - 1.0)) //TODO::magic number is to bound collision box
+                && this.cork_coord[1] >= ((Math.tan(this.p2racketAngle) * this.p2_racket_head_pos[0]) + 0.5) - RACKET_HEAD_LENGTH  //don't divide length by 2 == make hitbox bigger? lets the cork go on different arcs depending on where in the (larger) hitbox it hits
+                && this.cork_coord[1] <= ((Math.tan(this.p2racketAngle) * this.p2_racket_head_pos[0]) + 1) + RACKET_HEAD_LENGTH
+                && this.cork_coord[2] >= this.p2_racket_head_pos[2] - RACKET_HEAD_WIDTH
+                && this.cork_coord[2] <= this.p2_racket_head_pos[2] + RACKET_HEAD_WIDTH
+            ) {
+                return true;
+            } else {
+                return false;
+            }
         }
         else{
-            return false;
+            if (this.cork_coord[0] + this.ball_rad - 0.5 >= this.p2_racket_head_pos[0]    //TODO::magic number is to bound collision box
+                && this.cork_coord[0] + this.ball_rad <= this.p2_racket_head_pos[0] + 1 //TODO::magic number is to bound collision box
+                && this.cork_coord[1] >= this.p2_racket_head_pos[1] - RACKET_HEAD_LENGTH  //don't divide length by 2 == make hitbox bigger? lets the cork go on different arcs depending on where in the (larger) hitbox it hits
+                && this.cork_coord[1] <= this.p2_racket_head_pos[1] + RACKET_HEAD_LENGTH
+                && this.cork_coord[2] >= this.p2_racket_head_pos[2] - RACKET_HEAD_WIDTH
+                && this.cork_coord[2] <= this.p2_racket_head_pos[2] + RACKET_HEAD_WIDTH
+            ){
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
@@ -315,8 +338,8 @@ export class GoodMinton extends Scene {
 
         let t_diff = t - this.p2_hitting_start_t;
         let speed_multiplier = 10;
-        let angle = -Math.PI/4+(-Math.PI/4)*(Math.sin(speed_multiplier*t_diff));
-        this.p2racketAngle = angle;
+        this.angle = -Math.PI/4+(-Math.PI/4)*(Math.sin(speed_multiplier*t_diff));
+        this.p2racketAngle = this.angle;
 
         this.p1_racket_handle_transform = p1_racket_handle_transform_loc.times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
         this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
@@ -330,8 +353,8 @@ export class GoodMinton extends Scene {
             if(this.p2_hitting_start_t === -1){
                 this.p2_hitting_start_t = t;
             }
-            this.p2_racket_handle_transform = p2_racket_handle_transform_loc.times(Mat4.rotation(angle, 0,0,1)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-            this.p2_racket_head_transform = p2_racket_head_transform_loc.times(Mat4.translation(0,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(0,1.5,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+            this.p2_racket_handle_transform = p2_racket_handle_transform_loc.times(Mat4.rotation(this.angle, 0,0,1)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+            this.p2_racket_head_transform = p2_racket_head_transform_loc.times(Mat4.translation(0,-1.5,0)).times(Mat4.rotation(this.angle, 0,0,1)).times(Mat4.translation(0,1.5,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
             if(t_diff >= Math.PI/(speed_multiplier/2)-0.05){
                 if(this.p2_crossed_0){
                     this.p2_hitting = false;
