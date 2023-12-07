@@ -318,7 +318,7 @@ export class GoodMinton extends Scene {
         let angle = -Math.PI/4+(-Math.PI/4)*(Math.sin(speed_multiplier*t_diff));
         this.p2racketAngle = angle;
 
-        this.p1_racket_handle_pos = p1_racket_handle_transform_loc.times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.p1_racket_handle_transform = p1_racket_handle_transform_loc.times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
         this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
 
         if(!this.p2_hitting) {
@@ -349,7 +349,7 @@ export class GoodMinton extends Scene {
         let p2_raquet_handle_color = hex_color("#f1807e");
 
         this.shapes.cylinder.draw(context, program_state, this.p1_racket_handle_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
-        //this.shapes.cylinder.draw(context, program_state, this.p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
+        this.shapes.cylinder.draw(context, program_state, this.p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
 
 
         this.shapes.cylinder.draw(context, program_state, this.p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
