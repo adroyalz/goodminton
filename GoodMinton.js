@@ -19,8 +19,8 @@ export class GoodMinton extends Scene {
         this.ball_rad = 2;
         this.p1_racket_head_pos = [0.0,0.0,0.0];
         this.p1_racket_handle_pos = [0.0,0.0,0.0];
-        this.p2_racket_head_pos = [0.0,0.0,0.0];
-        this.p2_racket_handle_pos = [0.0,0.0,0.0];
+        this.p2_racket_head_pos = [10.0,0.0,0.0];
+        this.p2_racket_handle_pos = [10.0,-1.5,0.0];
         // this.cork_coord = [3.5,-2.0,-5.0];
         // this.cork_vel = [0.1,0.3,0.1];
         this.cork_coord = [0,5.0,0];
@@ -322,16 +322,16 @@ export class GoodMinton extends Scene {
         this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
 
         if(!this.p2_hitting) {
-            this.p2_racket_handle_transform = p2_racket_handle_transform_loc.times(Mat4.translation(10, -1.5, 0)).times(Mat4.scale(0.25, 2, 0.25)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0));
-            this.p2_racket_head_transform = p2_racket_head_transform_loc.times(Mat4.translation(10, 0, 0)).times(Mat4.scale(0.5, 1, 1)).times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
+            this.p2_racket_handle_transform = p2_racket_handle_transform_loc.times(Mat4.scale(0.25, 2, 0.25)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0));
+            this.p2_racket_head_transform = p2_racket_head_transform_loc.times(Mat4.scale(0.5, 1, 1)).times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
         }
         else{
             //record hit start time
             if(this.p2_hitting_start_t === -1){
                 this.p2_hitting_start_t = t;
             }
-            this.p2_racket_handle_transform = p2_racket_handle_transform_loc.times(Mat4.translation(10,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(-10,1.5,0)).times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-            this.p2_racket_head_transform = p2_racket_head_transform_loc.times(Mat4.translation(10,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(-10,1.5,0)).times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+            this.p2_racket_handle_transform = p2_racket_handle_transform_loc.times(Mat4.rotation(angle, 0,0,1)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+            this.p2_racket_head_transform = p2_racket_head_transform_loc.times(Mat4.translation(0,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(0,1.5,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
             if(t_diff >= Math.PI/(speed_multiplier/2)-0.05){
                 if(this.p2_crossed_0){
                     this.p2_hitting = false;
