@@ -26,7 +26,7 @@ export class GoodMinton extends Scene {
         this.cork_coord = [0,5.0,0];
         this.cork_vel = [0.16,0.2,0];
         this.floor_coord = [0.0,-5.0,0.0];
-        this.floor_scale = [100,1.0,50.0];
+        this.floor_scale = [80,1.0,50.0];
         this.rain = [];
         this.raining = false;
         this.thundering = true;
@@ -57,16 +57,26 @@ export class GoodMinton extends Scene {
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             plastic: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-            ground: new Material(new defs.Phong_Shader(),
-                {ambient: .5, diffusivity: .6, color: hex_color("#44693D")}),
+            // ground: new Material(new defs.Phong_Shader(),
+            //     {ambient: .5, diffusivity: .6, color: hex_color("#44693D")}),
+            ground: new Material(new Textured_Phong(), {
+                color: hex_color("#ffffff"),
+                ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/floor2.webp", "NEAREST")
+            }),
             day_back: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#7BB2DD")}),
             raindrop: new Material(new defs.Phong_Shader(),
                 {diffusivity: 1, color: hex_color("#6488ea")}),
             background1: new Material(new Textured_Phong(), {
                 color: hex_color("#ffffff"),
-                ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
-                texture: new Texture("assets/2c1.jpg", "NEAREST")
+                ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/aud2a.jpg", "NEAREST")
+            }),
+            background2: new Material(new Textured_Phong(), {
+                color: hex_color("#ffffff"),
+                ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/aud2a.jpg", "NEAREST")
             }),
             cork: new Material(new defs.Phong_Shader(),
                 {ambient: .5, diffusivity: 1, color: hex_color("#C0C0C0")}),
@@ -200,8 +210,14 @@ export class GoodMinton extends Scene {
     }
 
     draw_bg(context, program_state){
-        let bg_transform = Mat4.identity().times(Mat4.translation(0, 5, -10)).times(Mat4.scale(100, 10, 0));
-        this.shapes.cube.draw(context, program_state, bg_transform, this.materials.background1); //day_back);
+        let bg_transform = Mat4.identity().times(Mat4.translation(0, 5, -50)).times(Mat4.scale(100, 100, 0));
+        this.shapes.cube.draw(context, program_state, bg_transform, this.materials.background1);
+        let bg2_transform = Mat4.identity().times(Mat4.translation(0, 5, 50)).times(Mat4.scale(100, 100, 0));
+        this.shapes.cube.draw(context, program_state, bg2_transform, this.materials.background2);
+        let bg3_transform = Mat4.identity().times(Mat4.translation(-this.floor_scale[0], 5, 0)).times(Mat4.scale(0, 100, 100));
+        this.shapes.cube.draw(context, program_state, bg3_transform, this.materials.background1);
+        let bg4_transform = Mat4.identity().times(Mat4.translation(-this.floor_scale[0], 5, 0)).times(Mat4.scale(0, 100, 100));
+        this.shapes.cube.draw(context, program_state, bg4_transform, this.materials.background2);
     }
 
     draw_rain(context, program_state, t, temp){
