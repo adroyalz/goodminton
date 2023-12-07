@@ -1,32 +1,16 @@
 import {defs, tiny} from './examples/common.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture,
 } = tiny;
+
+const {Textured_Phong, Cube, Closed_Cone} = defs
 
 const GRAVITY = .01;
 const ELASTICITY = 0.8;
 const RACKET_HEAD_LENGTH = 2.0;
 const RACKET_HEAD_WIDTH = 2.0;
 
-class Cube extends Shape {
-    constructor() {
-        super("position", "normal",);
-        // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
-        this.arrays.position = Vector3.cast(
-            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, -1], [-1, 1, -1], [1, 1, 1], [-1, 1, 1],
-            [-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, 1], [1, -1, -1], [1, 1, 1], [1, 1, -1],
-            [-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1], [1, -1, -1], [-1, -1, -1], [1, 1, -1], [-1, 1, -1]);
-        this.arrays.normal = Vector3.cast(
-            [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0],
-            [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0],
-            [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, -1], [0, 0, -1], [0, 0, -1], [0, 0, -1]);
-        // Arrange the vertices into a square shape in texture space too:
-        this.indices.push(0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6, 8, 9, 10, 9, 11, 10, 12, 13,
-            14, 13, 15, 14, 16, 17, 18, 17, 19, 18, 20, 21, 22, 21, 23, 22);
-
-    }
-}
 export class GoodMinton extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -40,7 +24,7 @@ export class GoodMinton extends Scene {
         // this.cork_coord = [3.5,-2.0,-5.0];
         // this.cork_vel = [0.1,0.3,0.1];
         this.cork_coord = [0,5.0,0];
-        this.cork_vel = [0.2,0.1,0];
+        this.cork_vel = [0.16,0.2,0];
         this.floor_coord = [0.0,-5.0,0.0];
         this.floor_scale = [100,1.0,50.0];
         this.rain = [];
@@ -64,30 +48,13 @@ export class GoodMinton extends Scene {
             cork: new (defs.Subdivision_Sphere)(4),
             cylinder: new defs.Rounded_Capped_Cylinder(50, 50),
             raindrop: new (defs.Subdivision_Sphere)(4),
+            corki: new (defs.Closed_Cone)(10, 10),
         };
 
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-            test2: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
-            sun: new Material(new defs.Phong_Shader(),
-                {ambient: 1, color: hex_color("#ffffff")}),
-            planet1: new Material(new defs.Phong_Shader(),
-                {diffusivity: 1, color: hex_color("#808080")}),
-            planet2phong: new Material(new defs.Phong_Shader(),
-                {diffusivity: .2, specularity: 1.0, color: hex_color("#80FFFF")}),
-            planet2gouraud: new Material(new Gouraud_Shader(),
-                {diffusivity: .2, specularity: 1.0, color: hex_color("#80FFFF")}),
-            planet3: new Material(new defs.Phong_Shader(),
-                {diffusivity: 1, specularity: 1, color: hex_color("#B08040")}),
-            planet4: new Material(new defs.Phong_Shader(),
-                {specularity: 1, color: hex_color("#6488ea")}),
-            planet4moon: new Material(new defs.Phong_Shader(),
-                {diffusivity: 0.2, ambience: 0.5, color: hex_color("#ffffff")}),
-            //ring: new Material(new defs.Phong_Shader(), {ambience: 1, color: hex_color("#B08040")}),
-            ring: new Material(new Ring_Shader()),
             plastic: new Material(new defs.Phong_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
             ground: new Material(new defs.Phong_Shader(),
@@ -96,6 +63,11 @@ export class GoodMinton extends Scene {
                 {ambient: 1, diffusivity: .6, color: hex_color("#7BB2DD")}),
             raindrop: new Material(new defs.Phong_Shader(),
                 {diffusivity: 1, color: hex_color("#6488ea")}),
+            background1: new Material(new Textured_Phong(), {
+                color: hex_color("#ffffff"),
+                ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/2c1.jpg", "NEAREST")
+            }),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -115,10 +87,11 @@ export class GoodMinton extends Scene {
             //this.record_hit_time("p2", );
         });
         this.new_line();
-        this.key_triggered_button("Player View", ["Control", "0"], () => this.attached = () => this.p2pos); //Mat4.inverse(this.initial_camera_location).times(Mat4.rotation(Math.PI/2, 0,1,0)).times(Mat4.translation(0,0,10)));
+        this.key_triggered_button("Player View", ["Control", "0"], () => this.attached = () => this.p2pos);
+        this.key_triggered_button("Spectator View", ["Control", "1"], () => this.attached = () => this.spectatorPos);
         this.key_triggered_button("reset cork", ["t"],  () => {
             this.cork_coord = [0,5.0,0];
-            this.cork_vel = [0.2,0.1,0];
+            this.cork_vel = [0.16,0.2,0];
         });
     }
 
@@ -131,7 +104,15 @@ export class GoodMinton extends Scene {
             this.cork_vel[1] *= -ELASTICITY;
         }
         if(this.check_collision_racket_p2() && this.cork_vel[0] > 0){  //second term is to remove bugs when objects overlap
-            this.cork_vel[0] *= -10.0;
+            let vel = -1.0;
+            //REALISTIC velocity?
+            // this.cork_vel[0] = vel*Math.cos(this.p2racketAngle);
+            // this.cork_vel[1] = vel*Math.sin(this.p2racketAngle);
+
+            //HARDCODED velocity on hit
+            this.cork_vel[0] = -0.3;
+            this.cork_vel[1] = 0.3;
+            //this.cork_vel[0] *= -10.0;
         }
         // console.log("cork_pos", this.cork_coord + this.ball_rad);
         // console.log("head_pos",this.p1_racket_head_pos);
@@ -172,9 +153,12 @@ export class GoodMinton extends Scene {
         else return false;
     }
 
-    draw_ball(context, program_state){
+    draw_ball(context, program_state, t){
         let cork_transform = Mat4.identity().times(Mat4.translation(this.cork_coord[0], this.cork_coord[1], this.cork_coord[2]));
-        this.shapes.cork.draw(context, program_state, cork_transform, this.materials.plastic);
+        //this.shapes.cork.draw(context, program_state, cork_transform, this.materials.plastic);
+        let cork_angle = -(Math.PI/2+Math.sin(4*t));
+        let corki_transform = Mat4.identity().times(Mat4.translation(this.cork_coord[0], this.cork_coord[1], this.cork_coord[2])).times(Mat4.rotation(cork_angle, 0,0,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+        this.shapes.corki.draw(context, program_state, corki_transform, this.materials.plastic);
     }
 
     draw_floor(context, program_state){
@@ -184,7 +168,7 @@ export class GoodMinton extends Scene {
 
     draw_bg(context, program_state){
         let bg_transform = Mat4.identity().times(Mat4.translation(0, 5, -10)).times(Mat4.scale(100, 10, 0));
-        this.shapes.cube.draw(context, program_state, bg_transform, this.materials.day_back);
+        this.shapes.cube.draw(context, program_state, bg_transform, this.materials.background1); //day_back);
     }
 
     draw_rain(context, program_state, t, temp){
@@ -230,7 +214,8 @@ export class GoodMinton extends Scene {
 
         let t_diff = t - this.p2_hitting_start_t;
         let speed_multiplier = 10;
-        let angle = (-Math.PI/4)*(Math.sin(speed_multiplier*t_diff));
+        let angle = -Math.PI/4+(-Math.PI/4)*(Math.sin(speed_multiplier*t_diff));
+        this.p2racketAngle = angle;
 
         if(!this.p2_hitting){
             let p1_racket_handle_transform = Mat4.identity().times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
@@ -311,6 +296,8 @@ export class GoodMinton extends Scene {
             let net_mesh_transform_vertical = Mat4.identity().times(Mat4.translation(0, -1, 8 - i)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.1, 0.1, 2.1));
             this.shapes.cylinder.draw(context, program_state, net_mesh_transform_vertical, this.materials.plastic.override({color: mesh_color}));
         }
+
+        this.spectatorPos = Mat4.identity().times(Mat4.translation(0,5,20)).times(Mat4.rotation(-Math.PI/8,1,0,0));
     }
 
 
@@ -348,11 +335,14 @@ export class GoodMinton extends Scene {
         }
         this.update_state();
         this.draw_floor(context, program_state);
-        this.draw_ball(context, program_state);
+        this.draw_ball(context, program_state, t);
         this.draw_bg(context, program_state);
         this.draw_rain(context, program_state, t);
         this.draw_racket(context, program_state, t);
         this.draw_net(context, program_state);
+
+       // this.shapes.cube.draw(context, program_state, Mat4.identity().times(Mat4.translation(0, 5, 0)), this.materials.beach);
+        //this.shapes.corki.draw(context, program_state, Mat4.identity().times(Mat4.translation(0, 5, 0)), this.materials.plastic);
 
 
         if(this.attached !== undefined){
