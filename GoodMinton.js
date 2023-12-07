@@ -68,6 +68,13 @@ export class GoodMinton extends Scene {
                 ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/2c1.jpg", "NEAREST")
             }),
+            cork: new Material(new defs.Phong_Shader(),
+                {ambient: .5, diffusivity: 1, color: hex_color("#C0C0C0")}),
+            // cork: new Material(new Textured_Phong(), {
+            //     color: hex_color("#ffffff"),
+            //     ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
+            //     texture: new Texture("assets/Cork.jpg", "NEAREST")
+            // }),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -114,6 +121,17 @@ export class GoodMinton extends Scene {
             this.cork_vel[1] = 0.3;
             //this.cork_vel[0] *= -10.0;
         }
+        if(this.check_collision_racket_p1() && this.cork_vel[0] < 0){  //second term is to remove bugs when objects overlap
+            let vel = 1.0;
+            //REALISTIC velocity?
+            // this.cork_vel[0] = vel*Math.cos(this.p2racketAngle);
+            // this.cork_vel[1] = vel*Math.sin(this.p2racketAngle);
+
+            //HARDCODED velocity on hit
+            this.cork_vel[0] = 0.3;
+            this.cork_vel[1] = 0.3;
+            //this.cork_vel[0] *= -10.0;
+        }
         // console.log("cork_pos", this.cork_coord + this.ball_rad);
         // console.log("head_pos",this.p1_racket_head_pos);
         //update coordinates based on velocity
@@ -131,6 +149,20 @@ export class GoodMinton extends Scene {
         }
     }
 
+    check_collision_racket_p1(){
+        if (this.cork_coord[0] - this.ball_rad  <= this.p1_racket_head_pos[0]   //TODO::magic number is to bound collision box
+            && this.cork_coord[0] + this.ball_rad >= this.p1_racket_head_pos[0] + 1 //TODO::magic number is to bound collision box
+            && this.cork_coord[1] >= this.p1_racket_head_pos[1] - RACKET_HEAD_LENGTH/2.0
+            && this.cork_coord[1] <= this.p1_racket_head_pos[1] + RACKET_HEAD_LENGTH/2.0
+            && this.cork_coord[2] >= this.p1_racket_head_pos[1] - RACKET_HEAD_WIDTH/2.0
+            && this.cork_coord[2] <= this.p1_racket_head_pos[1] + RACKET_HEAD_WIDTH/2.0
+        ){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
     check_collision_racket_p2(){
         if (this.cork_coord[0] + this.ball_rad - 0.5 >= this.p2_racket_head_pos[0]    //TODO::magic number is to bound collision box
             && this.cork_coord[0] + this.ball_rad <= this.p2_racket_head_pos[0] + 1 //TODO::magic number is to bound collision box
@@ -146,6 +178,7 @@ export class GoodMinton extends Scene {
         }
     }
 
+
     check_collision_net() {
         if(this.cork_coord[0] == 0 && this.cork_coord[1] >= -2.1 && this.cork_coord[1] <= 0 && this.cork_coord[2] <= 9 && this.cork_coord[2] >= -9){
             return true;
@@ -158,7 +191,7 @@ export class GoodMinton extends Scene {
         //this.shapes.cork.draw(context, program_state, cork_transform, this.materials.plastic);
         let cork_angle = -(Math.PI/2+Math.sin(4*t));
         let corki_transform = Mat4.identity().times(Mat4.translation(this.cork_coord[0], this.cork_coord[1], this.cork_coord[2])).times(Mat4.rotation(cork_angle, 0,0,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
-        this.shapes.corki.draw(context, program_state, corki_transform, this.materials.plastic);
+        this.shapes.corki.draw(context, program_state, corki_transform, this.materials.cork);
     }
 
     draw_floor(context, program_state){
