@@ -101,7 +101,7 @@ export class GoodMinton extends Scene {
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         //Vikram changed this from button r -> b since r forces camera to the origin
-        this.key_triggered_button("Turn rain on", ["b"], () => {
+        this.key_triggered_button("Turn rain on", ["y"], () => {
             this.raining = !this.raining;
         });
         this.key_triggered_button("p2 hits", ["k"],  () => {
@@ -110,7 +110,7 @@ export class GoodMinton extends Scene {
             }
             //this.record_hit_time("p2", );
         });
-        this.key_triggered_button("p1 hits", ["s"],  () => {
+        this.key_triggered_button("p1 hits", ["v"],  () => {
             if(!this.p1_hitting) {
                 this.p1_hitting = true;
             }
@@ -122,10 +122,10 @@ export class GoodMinton extends Scene {
         this.key_triggered_button("move_p2_up", ["i"],  () => {
             this.p2_move_dir = 2;
         });
-        this.key_triggered_button("move_p1_left", ["a"],  () => {
+        this.key_triggered_button("move_p1_left", ["c"],  () => {
             this.p1_move_dir = 1;
         });
-        this.key_triggered_button("move_p2_down", ["d"],  () => {
+        this.key_triggered_button("move_p1_right", ["b"],  () => {
             this.p1_move_dir = 2;
         });
         this.new_line();
