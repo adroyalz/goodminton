@@ -17,8 +17,8 @@ export class GoodMinton extends Scene {
         super();
 
         this.ball_rad = 2;
-        this.p1_racket_head_pos = [0.0,0.0,0.0];
-        this.p1_racket_handle_pos = [0.0,0.0,0.0];
+        this.p1_racket_head_pos = [-10.0,0.0,0.0];
+        this.p1_racket_handle_pos = [-10.0,-1.5,0.0];
         this.p2_racket_head_pos = [10.0,0.0,0.0];
         this.p2_racket_handle_pos = [10.0,-1.5,0.0];
         // this.cork_coord = [3.5,-2.0,-5.0];
@@ -318,8 +318,8 @@ export class GoodMinton extends Scene {
         let angle = -Math.PI/4+(-Math.PI/4)*(Math.sin(speed_multiplier*t_diff));
         this.p2racketAngle = angle;
 
-        this.p1_racket_handle_transform = p1_racket_handle_transform_loc.times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-        this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+        this.p1_racket_handle_transform = p1_racket_handle_transform_loc.times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
 
         if(!this.p2_hitting) {
             this.p2_racket_handle_transform = p2_racket_handle_transform_loc.times(Mat4.scale(0.25, 2, 0.25)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0));
