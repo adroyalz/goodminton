@@ -19,8 +19,8 @@ export class GoodMinton extends Scene {
         this.ball_rad = 2;
         this.p1_racket_head_pos = 0;
         this.p1_racket_handle_pos = 0;
-        this.p2_racket_head_pos = 0;
-        this.p2_racket_handle_pos = 0;
+        this.p2_racket_head_pos = [0.0,0.0,0.0];
+        this.p2_racket_handle_pos = [0.0,0.0,0.0];
         // this.cork_coord = [3.5,-2.0,-5.0];
         // this.cork_vel = [0.1,0.3,0.1];
         this.cork_coord = [0,5.0,0];
@@ -33,6 +33,8 @@ export class GoodMinton extends Scene {
         this.p2_hitting = false;
         this.p2_crossed_0 = false;
         this.p2_hitting_start_t = -1;
+        this.p2_move_dir = [false,false,false,false];
+        this.p1_move_dir = [false,false,false,false];
 
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -103,6 +105,18 @@ export class GoodMinton extends Scene {
             }
             //this.record_hit_time("p2", );
         });
+        this.key_triggered_button("move_p2_left", ["j"],  () => {
+            this.p2_move_dir[0] = true;
+        });
+        this.key_triggered_button("move_p2_up", ["i"],  () => {
+            this.p2_move_dir[1] = true;
+        });
+        this.key_triggered_button("move_p2_right", ["l"],  () => {
+            this.p2_move_dir[2] = true;
+        });
+        this.key_triggered_button("move_p2_down", ["k"],  () => {
+            this.p2_move_dir[3] = true;
+        });
         this.new_line();
         this.key_triggered_button("Player View", ["Control", "0"], () => this.attached = () => this.p2pos);
         this.key_triggered_button("Spectator View", ["Control", "1"], () => this.attached = () => this.spectatorPos);
@@ -113,7 +127,30 @@ export class GoodMinton extends Scene {
     }
 
     update_state(){
-        //update velocity based on gravity
+        //update p2 location
+        if (this.p2_move_dir[0]) {
+            //move left
+            this.p2_racket_head_pos[0] -= 0.1;
+            this.p2_racket_handle_pos[0] -= 0.1;
+        }
+        if (this.p2_move_dir[1]){
+            //move up
+            this.p2_racket_head_pos[2] -= 0.1;
+            this.p2_racket_handle_pos[2] -= 0.1;
+        }
+        if (this.p2_move_dir[2]){
+            //move right
+            this.p2_racket_head_pos[0] += 0.1;
+            this.p2_racket_handle_pos[0] += 0.1;
+        }
+        if (this.p2_move_dir[3]){
+            //move down
+            this.p2_racket_head_pos[2] += 0.1;
+            this.p2_racket_handle_pos[2] += 0.1;
+        }
+        this.p2_move_dir = [false, false, false, false];
+
+        //update cork velocity based on gravity
         if (this.cork_coord[1] > this.floor_coord[1] + this.ball_rad)
             this.cork_vel[1] -= GRAVITY;
         //update velocity based on collisions
@@ -151,7 +188,7 @@ export class GoodMinton extends Scene {
     }
 
     check_collision_ground(){
-        if (this.cork_coord[1] <= this.floor_coord[1] + this.ball_rad){
+        if (this.cork_coord[1] <= (this.floor_coord[1] + this.ball_rad)){
             return true;
         }
         else{
@@ -256,10 +293,14 @@ export class GoodMinton extends Scene {
 
     }
 
-    draw_racket(context, program_state, t){
+    draw_racket(context, program_state, t) {
         let p1_raquet_handle_color = hex_color("#6488ea");
         let p2_raquet_handle_color = hex_color("#f1807e");
-        let origin_vec4 = vec4(0,0,0,1.0)
+        let origin_vec4 = vec4(0, 0, 0, 1.0)
+
+        let p2_racket_handle_transform = Mat4.identity().times(Mat4.translation(this.p2_racket_handle_pos[0],this.p2_racket_handle_pos[1], this.p2_racket_handle_pos[2]));
+        let p2_racket_head_transform = Mat4.identity().times(Mat4.translation(this.p2_racket_head_pos[0], this.p2_racket_head_pos[1], this.p2_racket_head_pos[2]));
+        console.log(p2_racket_handle_transform)
 
         let t_diff = t - this.p2_hitting_start_t;
         let speed_multiplier = 10;
@@ -267,18 +308,17 @@ export class GoodMinton extends Scene {
         this.p2racketAngle = angle;
 
         if(!this.p2_hitting){
+            //TODO:: move transform code to update_state
             let p1_racket_handle_transform = Mat4.identity().times(Mat4.translation(-10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-            this.p1_racket_handle_pos = p1_racket_handle_transform.times(origin_vec4);
+            //this.p1_racket_handle_pos = p1_racket_handle_transform.times(origin_vec4);
             this.shapes.cylinder.draw(context, program_state, p1_racket_handle_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
             let p1_racket_head_transform = Mat4.identity().times(Mat4.translation(-10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
-            this.p1_racket_head_pos = p1_racket_head_transform.times(origin_vec4);
+            //this.p1_racket_head_pos = p1_racket_head_transform.times(origin_vec4);
             this.shapes.cylinder.draw(context, program_state, p1_racket_head_transform, this.materials.plastic.override({color: p1_raquet_handle_color}));
 
-            let p2_racket_handle_transform = Mat4.identity().times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-            this.p2_racket_handle_pos = p2_racket_handle_transform.times(origin_vec4);
+            p2_racket_handle_transform = p2_racket_handle_transform.times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
             this.shapes.cylinder.draw(context, program_state, p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
-            let p2_racket_head_transform = Mat4.identity().times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
-            this.p2_racket_head_pos = p2_racket_head_transform.times(origin_vec4);
+            p2_racket_head_transform = p2_racket_head_transform.times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
             this.shapes.cylinder.draw(context, program_state, p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
 
             this.p2pos = p2_racket_head_transform;
@@ -317,7 +357,7 @@ export class GoodMinton extends Scene {
             }
             this.p2pos = p2_racket_head_transform;
         }
-        this.p2pos = this.p2pos.times(Mat4.translation(0, 3, 7));
+        //this.p2pos = this.p2pos.times(Mat4.translation(0, 3, 7)); //TODO::just commented this out
     }
 
     draw_net(context, program_state){
