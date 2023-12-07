@@ -311,8 +311,8 @@ export class GoodMinton extends Scene {
             if(this.p2_hitting_start_t === -1){
                 this.p2_hitting_start_t = t;
             }
-            this.p2_racket_handle_transform = this.p2_racket_handle_transform.times(Mat4.translation(10,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(-10,1.5,0)).times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-            this.p2_racket_head_transform = this.p2_racket_head_transform.times(Mat4.translation(10,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(-10,1.5,0)).times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+            this.p2_racket_handle_transform = p2_racket_handle_transform.times(Mat4.translation(10,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(-10,1.5,0)).times(Mat4.translation(10,-1.5,0)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+            this.p2_racket_head_transform = p2_racket_head_transform.times(Mat4.translation(10,-1.5,0)).times(Mat4.rotation(angle, 0,0,1)).times(Mat4.translation(-10,1.5,0)).times(Mat4.translation(10,0,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
             if(t_diff >= Math.PI/(speed_multiplier/2)-0.05){
                 if(this.p2_crossed_0){
                     this.p2_hitting = false;
