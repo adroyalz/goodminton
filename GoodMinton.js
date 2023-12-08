@@ -64,6 +64,8 @@ export class GoodMinton extends Scene {
             cylinder: new defs.Rounded_Capped_Cylinder(50, 50),
             raindrop: new (defs.Subdivision_Sphere)(4),
             corki: new (defs.Closed_Cone)(10, 10),
+            balli: new (defs.Subdivision_Sphere)(4),
+            // corki: new (defs.Rounded_Closed_Cone)(10,10,1),
         };
 
         // *** Materials
@@ -79,6 +81,11 @@ export class GoodMinton extends Scene {
                 ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/floor2.webp", "NEAREST")
             }),
+            ground2: new Material(new Textured_Phong(), {
+                color: hex_color("#ffffff"),
+                ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/grass.jpg", "NEAREST")
+            }),
             day_back: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#7BB2DD")}),
             raindrop: new Material(new defs.Phong_Shader(),
@@ -93,8 +100,19 @@ export class GoodMinton extends Scene {
                 ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/aud2a.jpg", "NEAREST")
             }),
-            cork: new Material(new defs.Phong_Shader(),
-                {ambient: .5, diffusivity: 1, color: hex_color("#C0C0C0")}),
+            cork: new Material(new Textured_Phong(), {
+                color: hex_color("#dfdff1"),
+                ambient: 0.4,
+                diffusivity: 0.3,
+                specularity: 0.1,
+                texture: new Texture("assets/feathers.jpg"),
+            }),
+            ball: new Material(new Textured_Phong(), {
+                color: hex_color("#ff4646"),
+                ambient: 0.4,
+                diffusivity: 0.3,
+                specularity: 0.1,
+            }),
             halo: new Material(new defs.Phong_Shader(), {
                 color: hex_color("#FDCA16"),
                 ambient: 1, diffusivity:0.1, specularity: 0.1
@@ -344,6 +362,7 @@ export class GoodMinton extends Scene {
     }
 
     draw_ball(context, program_state, t){
+        let ball_scale = 0.3;
         let cork_transform = Mat4.identity().times(Mat4.translation(this.cork_coord[0], this.cork_coord[1], this.cork_coord[2]));
         //this.shapes.cork.draw(context, program_state, cork_transform, this.materials.plastic);
         let velocity = Math.sqrt(this.cork_vel[0] **2 + this.cork_vel[1] ** 2 + this.cork_vel[2])
@@ -351,12 +370,21 @@ export class GoodMinton extends Scene {
         if(Math.abs(this.cork_vel[0]) > 0.0001)
             this.cork_angle = -(Math.PI/2+Math.sin(4*t));
         let corki_transform = Mat4.identity().times(Mat4.translation(this.cork_coord[0], this.cork_coord[1], this.cork_coord[2])).times(Mat4.rotation(this.cork_angle, 0,0,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+        let balli_transform = corki_transform.times(Mat4.translation(0, 0, 0.65)).times(Mat4.scale(ball_scale,ball_scale,ball_scale));
+        this.shapes.corki.arrays.texture_coord = this.shapes.corki.arrays.texture_coord.map(x=>x.times(1/90));
         this.shapes.corki.draw(context, program_state, corki_transform, this.materials.cork);
+        this.shapes.sphere4.draw(context, program_state, balli_transform, this.materials.ball);
     }
 
     draw_floor(context, program_state){
         let floor_transform = Mat4.identity().times(Mat4.translation(this.floor_coord[0], this.floor_coord[1], this.floor_coord[2])).times(Mat4.scale(this.floor_scale[0], this.floor_scale[1], this.floor_scale[2]));
         this.shapes.cube.draw(context, program_state, floor_transform, this.materials.ground);
+
+        let grass1_transform = floor_transform.times(Mat4.translation(0,1,-0.8)).times(Mat4.scale(1,0.1,0.2));
+        this.shapes.cube.draw(context, program_state, grass1_transform, this.materials.ground2);
+
+        let grass2_transform = floor_transform.times(Mat4.translation(0,1,0.8)).times(Mat4.scale(1,0.1,0.2));
+        this.shapes.cube.draw(context, program_state, grass2_transform, this.materials.ground2);
     }
 
     draw_bg(context, program_state){
