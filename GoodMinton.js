@@ -6,8 +6,8 @@ const {
 
 const {Textured_Phong, Cube, Closed_Cone} = defs
 
-const GRAVITY = .01;
-const ELASTICITY = 0.8;
+const GRAVITY = .005;//0.01
+const ELASTICITY = 0.5;
 const RACKET_HEAD_LENGTH = 2.0;
 const RACKET_HEAD_WIDTH = 2.0;
 
@@ -24,7 +24,7 @@ export class GoodMinton extends Scene {
         // this.cork_coord = [3.5,-2.0,-5.0];
         // this.cork_vel = [0.1,0.3,0.1];
         this.cork_coord = [0,5.0,0];
-        this.cork_vel = [0.16,0.2,0];
+        this.cork_vel = [0.16,0.1,0];
         this.floor_coord = [0.0,-5.0,0.0];
         this.floor_scale = [80,1.0,50.0];
         this.rain = [];
@@ -33,14 +33,19 @@ export class GoodMinton extends Scene {
         this.p1_hitting = false;
         this.p2_hitting = false;
         this.p2_crossed_0 = false;
+        this.p1_crossed_0 = false;
         this.p2_hitting_start_t = -1;
+        this.p1_hitting_start_t = -1;
         this.p2_move_dir = 0;
         this.p1_move_dir = 0;
         this.p2_racket_handle_transform = Mat4.identity();
         this.p2_racket_head_transform = Mat4.identity();
         this.p1_racket_handle_transform = Mat4.identity();
         this.p1_racket_head_transform = Mat4.identity();
-
+        this.collision_rebound_velocity = 0.4;
+        this.cork_angle = 0;
+        //how much the player moves each key press
+        this.move_distance = 0.2;
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
@@ -87,6 +92,10 @@ export class GoodMinton extends Scene {
             }),
             cork: new Material(new defs.Phong_Shader(),
                 {ambient: .5, diffusivity: 1, color: hex_color("#C0C0C0")}),
+            halo: new Material(new defs.Phong_Shader(), {
+                color: hex_color("#FDCA16"),
+                ambient: 1, diffusivity:0.1, specularity: 0.1
+            })
             // cork: new Material(new Textured_Phong(), {
             //     color: hex_color("#ffffff"),
             //     ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
@@ -104,76 +113,108 @@ export class GoodMinton extends Scene {
         this.key_triggered_button("Turn rain on", ["y"], () => {
             this.raining = !this.raining;
         });
-        this.key_triggered_button("p2 hits", ["k"],  () => {
-            if(!this.p2_hitting) {
-                this.p2_hitting = true;
-            }
-            //this.record_hit_time("p2", );
-        });
-        this.key_triggered_button("p1 hits", ["v"],  () => {
+        this.new_line();
+        this.key_triggered_button("p1 hits", ["c"],  () => {
             if(!this.p1_hitting) {
                 this.p1_hitting = true;
             }
             //this.record_hit_time("p1", );
         });
-        this.key_triggered_button("move_p2_left", ["j"],  () => {
-            this.p2_move_dir = 1;
-        });
-        this.key_triggered_button("move_p2_up", ["i"],  () => {
-            this.p2_move_dir = 2;
-        });
-        this.key_triggered_button("move_p1_left", ["c"],  () => {
+        this.key_triggered_button("move_p1_left", ["v"],  () => {
             this.p1_move_dir = 1;
         });
         this.key_triggered_button("move_p1_right", ["b"],  () => {
             this.p1_move_dir = 2;
         });
         this.new_line();
+        this.key_triggered_button("p2 hits", ["j"],  () => {
+            if(!this.p2_hitting) {
+                this.p2_hitting = true;
+            }
+            //this.record_hit_time("p2", );
+        });
+        this.key_triggered_button("move_p2_left", ["k"],  () => {
+            this.p2_move_dir = 1;
+        });
+        this.key_triggered_button("move_p2_right", ["l"],  () => {
+            this.p2_move_dir = 2;
+        });
+        this.new_line();
         this.key_triggered_button("Player View", ["Control", "0"], () => this.attached = () => this.p2pos);
         this.key_triggered_button("Spectator View", ["Control", "1"], () => this.attached = () => this.spectatorPos);
         this.key_triggered_button("reset cork", ["t"],  () => {
             this.cork_coord = [0,5.0,0];
-            this.cork_vel = [0.16,0.2,0];
+            this.cork_vel = [0.16,0.1,0];
+            this.pause = false;
         });
+        this.key_triggered_button("pause", ["p"], () => {
+            this.pause = !this.pause;
+        })
     }
-
+    degreesToRadians(degrees) {
+        return degrees * (Math.PI / 180);
+    }
     update_state(context, program_state, t){
-        this.update_racket(context, program_state, t)
-        //update cork velocity based on gravity
-        if (this.cork_coord[1] > this.floor_coord[1] + this.ball_rad)
-            this.cork_vel[1] -= GRAVITY;
-        //update velocity based on collisions
-        if(this.check_collision_ground() && this.cork_vel[1] < 0){ //second term is to remove bugs when objects overlap
-            this.cork_vel[1] *= -ELASTICITY;
+        if(!this.pause) {
+            let a = this.check_winner(); 
+            if(a != 0)
+                this.draw_halo(context, program_state);
+            console.log("current winner: ", a);
+            console.log("player 1 at : (" + this.p2_racket_head_pos[0] + ", " + this.p2_racket_head_pos[1] + ", " + this.p2_racket_head_pos[2] + ")");
+            this.update_racket(context, program_state, t)
+            //update cork velocity based on gravity
+            if (this.cork_coord[1] > this.floor_coord[1] + this.ball_rad)
+                this.cork_vel[1] -= GRAVITY;
+            //update velocity based on collisions
+            if(this.check_collision_ground() && this.cork_vel[1] < 0){ //second term is to remove bugs when objects overlap
+                this.cork_vel[0] *= ELASTICITY;
+                this.cork_vel[1] *= -ELASTICITY;
+            }
+            if(this.check_collision_racket_p2() && this.cork_vel[0] > 0 && this.p2_hitting){  //second term is to remove bugs when objects overlap
+                let vel = -1.0;
+                //REALISTIC velocity?
+                // this.cork_vel[0] = vel*Math.cos(this.p2racketAngle);
+                // this.cork_vel[1] = vel*Math.sin(this.p2racketAngle);
+    
+                //HARDCODED velocity on hit
+                //randomize angle between 30degrees and 60degrees
+                let theta = Math.floor(Math.random() * (60 - 30 + 1)) + 30;
+    
+                this.cork_vel[0] = -this.collision_rebound_velocity * Math.cos(this.degreesToRadians(theta));
+                this.cork_vel[1] = this.collision_rebound_velocity * Math.sin(this.degreesToRadians(theta));
+                //this.cork_vel[0] *= -10.0;
+            }
+            else if(this.check_collision_racket_p2() && this.cork_vel[0] > 0 && !this.p2_hitting){
+                this.cork_vel[0] = -0.1;
+                this.cork_vel[1] = 0;
+            }
+            if(this.check_collision_racket_p1() && this.cork_vel[0] < 0  && this.p1_hitting){  //second term is to remove bugs when objects overlap
+                let vel = 1.0;
+                //REALISTIC velocity?
+                // this.cork_vel[0] = vel*Math.cos(this.p2racketAngle);
+                // this.cork_vel[1] = vel*Math.sin(this.p2racketAngle);
+    
+                //HARDCODED velocity on hit
+                // this.cork_vel[0] = 0.3;
+                // this.cork_vel[1] = 0.3;
+    
+                let theta = Math.floor(Math.random() * (60 - 30 + 1)) + 30;
+    
+                this.cork_vel[0] = this.collision_rebound_velocity * Math.cos(this.degreesToRadians(theta));
+                this.cork_vel[1] = this.collision_rebound_velocity * Math.sin(this.degreesToRadians(theta));
+                //this.cork_vel[0] *= -10.0;
+            }
+            else if(this.check_collision_racket_p1() && this.cork_vel[0] < 0 && !this.p1_hitting){
+                this.cork_vel[0] = 0.1;
+                this.cork_vel[1] = 0;
+            }
+            // console.log("cork_pos", this.cork_coord + this.ball_rad);
+            // console.log("head_pos",this.p1_racket_head_pos);
+            //update coordinates based on velocity
+            this.cork_coord[0] += this.cork_vel[0];
+            this.cork_coord[1] += this.cork_vel[1];
+            this.cork_coord[2] += this.cork_vel[2];
         }
-        if(this.check_collision_racket_p2() && this.cork_vel[0] > 0){  //second term is to remove bugs when objects overlap
-            let vel = -1.0;
-            //REALISTIC velocity?
-            // this.cork_vel[0] = vel*Math.cos(this.p2racketAngle);
-            // this.cork_vel[1] = vel*Math.sin(this.p2racketAngle);
-
-            //HARDCODED velocity on hit
-            this.cork_vel[0] = -0.3;
-            this.cork_vel[1] = 0.3;
-            //this.cork_vel[0] *= -10.0;
-        }
-        if(this.check_collision_racket_p1() && this.cork_vel[0] < 0){  //second term is to remove bugs when objects overlap
-            let vel = 1.0;
-            //REALISTIC velocity?
-            // this.cork_vel[0] = vel*Math.cos(this.p2racketAngle);
-            // this.cork_vel[1] = vel*Math.sin(this.p2racketAngle);
-
-            //HARDCODED velocity on hit
-            this.cork_vel[0] = 0.3;
-            this.cork_vel[1] = 0.3;
-            //this.cork_vel[0] *= -10.0;
-        }
-        // console.log("cork_pos", this.cork_coord + this.ball_rad);
-        // console.log("head_pos",this.p1_racket_head_pos);
-        //update coordinates based on velocity
-        this.cork_coord[0] += this.cork_vel[0];
-        this.cork_coord[1] += this.cork_vel[1];
-        this.cork_coord[2] += this.cork_vel[2];
     }
 
     check_collision_ground(){
@@ -199,6 +240,33 @@ export class GoodMinton extends Scene {
             return false;
         }
     }
+    check_winner() {
+        //0 if no winner, 1 if p1 wins, 2 if p2 wins
+        //conditions for winning:
+            //player 1 hits net = player 2 wins
+            //cork lands on p1's side = player 2 wins
+
+        if(this.check_collision_net()) {
+            //velocity changed by collision with net, so a negative velocity actually means it was going to the right pre-collision
+            let tempVel = this.cork_vel[0];
+            this.cork_vel[0] = 0;
+            this.pause = true;
+            if(tempVel < 0)
+                return 2;
+            if(tempVel > 0)
+                return 1;
+            //return 2 - (this.cork_vel[0] > 0);
+        }
+        if(this.check_collision_ground()) {
+            this.cork_vel[0] = 0;
+            this.pause = true;
+            if(this.cork_coord[0] < 0)
+                return 2;
+            if(this.cork_coord[0] > 0)
+                return 1;
+        }
+        return 0;
+    }
     check_collision_racket_p2(){
         //change x and y based on angle to make swinging actually do something
         //ex) at pi/4, x must be == y if origin is the center of the racket and y must be == x
@@ -209,11 +277,13 @@ export class GoodMinton extends Scene {
         //and also y<tan(theta)racketX+1 and x<1/tan(theta) (racketY-1)
 
         //RACKET_HEAD_LENGTH might have to be part of the equation or reduce magic numbers to reduce the weird hitbox?
+        //using this variable to tune hitbox size
+        let new_RACKET_HEAD_LENGTH = RACKET_HEAD_LENGTH * 1;
         if(this.p2_hitting) {
             if (this.cork_coord[0] + this.ball_rad >= ((1 / Math.tan(this.p2racketAngle)) * (this.p2_racket_head_pos[1] - 0.5))    //TODO::magic number is to bound collision box
                 && this.cork_coord[0] + this.ball_rad <= ((1 / Math.tan(this.p2racketAngle)) * (this.p2_racket_head_pos[1] - 1.0)) //TODO::magic number is to bound collision box
-                && this.cork_coord[1] >= ((Math.tan(this.p2racketAngle) * this.p2_racket_head_pos[0]) + 0.5) - RACKET_HEAD_LENGTH  //don't divide length by 2 == make hitbox bigger? lets the cork go on different arcs depending on where in the (larger) hitbox it hits
-                && this.cork_coord[1] <= ((Math.tan(this.p2racketAngle) * this.p2_racket_head_pos[0]) + 1) + RACKET_HEAD_LENGTH
+                && this.cork_coord[1] >= ((Math.tan(this.p2racketAngle) * this.p2_racket_head_pos[0]) + 0.5) - new_RACKET_HEAD_LENGTH  //don't divide length by 2 == make hitbox bigger? lets the cork go on different arcs depending on where in the (larger) hitbox it hits
+                && this.cork_coord[1] <= ((Math.tan(this.p2racketAngle) * this.p2_racket_head_pos[0]) + 1) + new_RACKET_HEAD_LENGTH
                 && this.cork_coord[2] >= this.p2_racket_head_pos[2] - RACKET_HEAD_WIDTH
                 && this.cork_coord[2] <= this.p2_racket_head_pos[2] + RACKET_HEAD_WIDTH
             ) {
@@ -225,8 +295,8 @@ export class GoodMinton extends Scene {
         else{
             if (this.cork_coord[0] + this.ball_rad - 0.5 >= this.p2_racket_head_pos[0]    //TODO::magic number is to bound collision box
                 && this.cork_coord[0] + this.ball_rad <= this.p2_racket_head_pos[0] + 1 //TODO::magic number is to bound collision box
-                && this.cork_coord[1] >= this.p2_racket_head_pos[1] - RACKET_HEAD_LENGTH  //don't divide length by 2 == make hitbox bigger? lets the cork go on different arcs depending on where in the (larger) hitbox it hits
-                && this.cork_coord[1] <= this.p2_racket_head_pos[1] + RACKET_HEAD_LENGTH
+                && this.cork_coord[1] >= this.p2_racket_head_pos[1] - new_RACKET_HEAD_LENGTH  //don't divide length by 2 == make hitbox bigger? lets the cork go on different arcs depending on where in the (larger) hitbox it hits
+                && this.cork_coord[1] <= this.p2_racket_head_pos[1] + new_RACKET_HEAD_LENGTH
                 && this.cork_coord[2] >= this.p2_racket_head_pos[2] - RACKET_HEAD_WIDTH
                 && this.cork_coord[2] <= this.p2_racket_head_pos[2] + RACKET_HEAD_WIDTH
             ){
@@ -235,6 +305,7 @@ export class GoodMinton extends Scene {
                 return false;
             }
         }
+
     }
 
 
@@ -248,8 +319,11 @@ export class GoodMinton extends Scene {
     draw_ball(context, program_state, t){
         let cork_transform = Mat4.identity().times(Mat4.translation(this.cork_coord[0], this.cork_coord[1], this.cork_coord[2]));
         //this.shapes.cork.draw(context, program_state, cork_transform, this.materials.plastic);
-        let cork_angle = -(Math.PI/2+Math.sin(4*t));
-        let corki_transform = Mat4.identity().times(Mat4.translation(this.cork_coord[0], this.cork_coord[1], this.cork_coord[2])).times(Mat4.rotation(cork_angle, 0,0,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+        let velocity = Math.sqrt(this.cork_vel[0] **2 + this.cork_vel[1] ** 2 + this.cork_vel[2])
+        console.log("velocity: ", this.cork_vel[0])
+        if(Math.abs(this.cork_vel[0]) > 0.0001)
+            this.cork_angle = -(Math.PI/2+Math.sin(4*t));
+        let corki_transform = Mat4.identity().times(Mat4.translation(this.cork_coord[0], this.cork_coord[1], this.cork_coord[2])).times(Mat4.rotation(this.cork_angle, 0,0,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
         this.shapes.corki.draw(context, program_state, corki_transform, this.materials.cork);
     }
 
@@ -304,29 +378,45 @@ export class GoodMinton extends Scene {
         }
 
     }
+    draw_halo(context, program_state) {
+        let halo_transform = Mat4.identity();
+        let winner = this.check_winner();
+        
+        //let halo_color = hex_color("#FDCA16");
+        // if(winner == 0) {
+            halo_transform = Mat4.identity().times(Mat4.translation(50, 50, 50)).times(Mat4.scale(0.5, 0.5, 0.5));
+        // }
+        if(winner == 1) {
+            halo_transform = Mat4.identity().times(Mat4.translation(this.p1_racket_head_pos[0], this.p1_racket_head_pos[1] + 2, 0)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)).times(Mat4.scale(1, 1, 0.5));
+        }
+        if(winner == 2) {
+            halo_transform = Mat4.identity().times(Mat4.translation(this.p2_racket_head_pos[0], this.p2_racket_head_pos[1] + 2, 0)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)).times(Mat4.scale(1, 1, 0.5));
+        }
+        this.shapes.torus.draw(context, program_state, halo_transform, this.materials.halo);
+    }
 
     update_racket(context, program_state, t){
         //update p2 location
         if (this.p2_move_dir === 1) {
             //move left
-            this.p2_racket_head_pos[0] -= 0.1;
-            this.p2_racket_handle_pos[0] -= 0.1;
+            this.p2_racket_head_pos[0] -= this.move_distance;
+            this.p2_racket_handle_pos[0] -= this.move_distance;
         }
         if (this.p2_move_dir === 2){
             //move right
-            this.p2_racket_head_pos[0] += 0.1;
-            this.p2_racket_handle_pos[0] += 0.1;
+            this.p2_racket_head_pos[0] += this.move_distance;
+            this.p2_racket_handle_pos[0] += this.move_distance;
         }
         //update p1 location
         if (this.p1_move_dir === 1) {
             //move left
-            this.p1_racket_head_pos[0] -= 0.1;
-            this.p1_racket_handle_pos[0] -= 0.1;
+            this.p1_racket_head_pos[0] -= this.move_distance;
+            this.p1_racket_handle_pos[0] -= this.move_distance;
         }
         if (this.p1_move_dir === 2){
             //move right
-            this.p1_racket_head_pos[0] += 0.1;
-            this.p1_racket_handle_pos[0] += 0.1;
+            this.p1_racket_head_pos[0] += this.move_distance;
+            this.p1_racket_handle_pos[0] += this.move_distance;
         }
         this.p1_move_dir = 0;
         this.p2_move_dir = 0;
@@ -341,8 +431,8 @@ export class GoodMinton extends Scene {
         this.angle = -Math.PI/4+(-Math.PI/4)*(Math.sin(speed_multiplier*t_diff));
         this.p2racketAngle = this.angle;
 
-        this.p1_racket_handle_transform = p1_racket_handle_transform_loc.times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
-        this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+        //this.p1_racket_handle_transform = p1_racket_handle_transform_loc.times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        //this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
 
         if(!this.p2_hitting) {
             this.p2_racket_handle_transform = p2_racket_handle_transform_loc.times(Mat4.scale(0.25, 2, 0.25)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0));
@@ -363,6 +453,41 @@ export class GoodMinton extends Scene {
                 }
                 else{
                     this.p2_crossed_0 = true;
+                }
+            }
+        }
+
+
+        //p1 hitting
+        let t_diff2 = t - this.p1_hitting_start_t;
+        let speed_multiplier2 = 10;
+        this.angle = -Math.PI/4+(-Math.PI/4)*(Math.sin(speed_multiplier2*t_diff2));
+        this.angle = -this.angle;
+        this.p1racketAngle = this.angle;
+
+        //this.p1_racket_handle_transform = p1_racket_handle_transform_loc.times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+        //this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+
+        if(!this.p1_hitting) {
+            console.log("moving to default position");
+            this.p1_racket_handle_transform = p1_racket_handle_transform_loc.times(Mat4.scale(0.25, 2, 0.25)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0));
+            this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.scale(0.5, 1, 1)).times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
+        }
+        else{
+            //record hit start time
+            if(this.p1_hitting_start_t === -1){
+                this.p1_hitting_start_t = t;
+            }
+            this.p1_racket_handle_transform = p1_racket_handle_transform_loc.times(Mat4.rotation(this.angle, 0,0,1)).times(Mat4.scale(0.25,2,0.25)).times(Mat4.rotation(Math.PI/2, 1,0,0));
+            this.p1_racket_head_transform = p1_racket_head_transform_loc.times(Mat4.translation(0,-1.5,0)).times(Mat4.rotation(this.angle, 0,0,1)).times(Mat4.translation(0,1.5,0)).times(Mat4.scale(0.5,1,1)).times(Mat4.rotation(Math.PI/2, 0,1,0));
+            if(t_diff2 >= Math.PI/(speed_multiplier2/2)-0.05){
+                if(this.p1_crossed_0){
+                    this.p1_hitting = false;
+                    this.p1_crossed_0 = false;
+                    this.p1_hitting_start_t = -1;
+                }
+                else{
+                    this.p1_crossed_0 = true;
                 }
             }
         }
@@ -451,6 +576,7 @@ export class GoodMinton extends Scene {
         this.draw_rain(context, program_state, t);
         this.draw_racket(context, program_state, t);
         this.draw_net(context, program_state);
+        this.draw_halo(context, program_state);
 
        // this.shapes.cube.draw(context, program_state, Mat4.identity().times(Mat4.translation(0, 5, 0)), this.materials.beach);
         //this.shapes.corki.draw(context, program_state, Mat4.identity().times(Mat4.translation(0, 5, 0)), this.materials.plastic);
