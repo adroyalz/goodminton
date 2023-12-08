@@ -98,7 +98,12 @@ export class GoodMinton extends Scene {
             halo: new Material(new defs.Phong_Shader(), {
                 color: hex_color("#FDCA16"),
                 ambient: 1, diffusivity:0.1, specularity: 0.1
-            })
+            }),
+            roof: new Material(new Textured_Phong(), {
+                color: hex_color("#ffffff"),
+                ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/roof2.jpg", "NEAREST")
+            }),
             // cork: new Material(new Textured_Phong(), {
             //     color: hex_color("#ffffff"),
             //     ambient: 0.5, diffusivity: 0.1, specularity: 0.1,
@@ -143,8 +148,9 @@ export class GoodMinton extends Scene {
             this.p2_move_dir = 2;
         });
         this.new_line();
-        this.key_triggered_button("Player View", ["Control", "0"], () => this.attached = () => this.p2pos);
-        this.key_triggered_button("Spectator View", ["Control", "1"], () => this.attached = () => this.spectatorPos);
+        this.key_triggered_button("Player2 View", ["Control", "0"], () => this.attached = () => this.p2pos);
+        //this.key_triggered_button("Player1 View", ["Control", "1"], () => this.attached = () => this.p1pos);
+        this.key_triggered_button("Spectator View", ["Control", "2"], () => this.attached = () => this.spectatorPos);
         this.key_triggered_button("reset cork", ["t"],  () => {
             this.cork_coord = [0,5.0,0];
             this.cork_vel = [0.16,0.1,0];
@@ -360,8 +366,10 @@ export class GoodMinton extends Scene {
         this.shapes.cube.draw(context, program_state, bg2_transform, this.materials.background2);
         let bg3_transform = Mat4.identity().times(Mat4.translation(-this.floor_scale[0], 5, 0)).times(Mat4.scale(0, 100, 100));
         this.shapes.cube.draw(context, program_state, bg3_transform, this.materials.background1);
-        let bg4_transform = Mat4.identity().times(Mat4.translation(-this.floor_scale[0], 5, 0)).times(Mat4.scale(0, 100, 100));
+        let bg4_transform = Mat4.identity().times(Mat4.translation(this.floor_scale[0], 5, 0)).times(Mat4.scale(0, 100, 100));
         this.shapes.cube.draw(context, program_state, bg4_transform, this.materials.background2);
+        let roof_transform = Mat4.identity().times(Mat4.translation(0, 100, 0)).times(Mat4.scale(100, 0, 100));
+        this.shapes.cube.draw(context, program_state, roof_transform, this.materials.roof);
     }
 
     draw_rain(context, program_state, t, temp){
@@ -530,8 +538,8 @@ export class GoodMinton extends Scene {
 
         this.shapes.cylinder.draw(context, program_state, this.p2_racket_handle_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
         this.shapes.cylinder.draw(context, program_state, this.p2_racket_head_transform, this.materials.plastic.override({color: p2_raquet_handle_color}));
-        this.p2pos = this.p2_racket_head_transform;
 
+        this.p2pos = this.p2_racket_head_transform;
         this.p2pos = this.p2pos.times(Mat4.translation(0, 3, 7));
     }
 
