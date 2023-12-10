@@ -90,7 +90,8 @@ export class GoodMinton extends Scene {
                 color: hex_color("#ffffff"),
                 ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/floor2.webp", "NEAREST"),
-                bump_map: new Texture("assets/wood_bump_map.jpg", "NEAREST")
+                bump_map: new Texture("assets/wood_bump_map.jpg", "NEAREST"),
+                bump_map_size: [1500,1000]
             }),
             day_back: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#7BB2DD")}),
