@@ -805,22 +805,6 @@ const Fake_Bump_Map = defs.Fake_Bump_Map =
 
 const Floor_Bump_Map = defs.Floor_Bump_Map =
     class Floor_Bump_Map extends Textured_Phong {
-        vertex_glsl_code() {
-            // ********* VERTEX SHADER *********
-            return this.shared_glsl_code() + `
-                varying vec2 f_tex_coord;
-                attribute vec3 position, normal;                            
-                attribute vec2 texture_coord;
-                
-                uniform mat4 model_transform;
-                uniform mat4 projection_camera_model_transform;
-        
-                void main() {                                                                   
-                    gl_Position = projection_camera_model_transform * vec4(position, 1.0);
-                    f_tex_coord = texture_coord;
-                } `;
-        }
-
         fragment_glsl_code() {
             // ********* FRAGMENT SHADER *********
             return this.shared_glsl_code() + `
