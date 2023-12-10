@@ -811,14 +811,14 @@ const Floor_Bump_Map = defs.Floor_Bump_Map =
                 varying vec2 f_tex_coord;
                 uniform sampler2D texture;
                 uniform sampler2D bump_map;
-                uniform vec2 bump_map_size;
+                uniform float bump_map_size[2];
 
                 void main() {
                     vec4 tex_color = texture2D(texture, f_tex_coord);
                     if (tex_color.w < 0.01) discard;
 
-                    vec2 texelSize = 1.0 / bump_map_size;
-                    vec2 uv = gl_FragCoord.xy / bump_map_size;
+                    vec2 texelSize = 1.0 / vec2(bump_map_size[0], bump_map_size[1]);
+                    vec2 uv = gl_FragCoord.xy / vec2(bump_map_size[0], bump_map_size[1]);
 
                     // Sample neighboring pixels from the bump map
                     vec3 left = texture2D(bump_map, uv - vec2(texelSize.x, 0.0)).rgb;
