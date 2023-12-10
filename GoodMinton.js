@@ -4,7 +4,7 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture,
 } = tiny;
 
-const {Textured_Phong, Cube, Closed_Cone} = defs
+const {Textured_Phong, Cube, Closed_Cone, Floor_Bump_Map} = defs
 
 const GRAVITY = .005;//0.01
 const ELASTICITY = 0.5;
@@ -85,6 +85,12 @@ export class GoodMinton extends Scene {
                 color: hex_color("#ffffff"),
                 ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
                 texture: new Texture("assets/grass.jpg", "NEAREST")
+            }),
+            bump_floor: new Material(new Floor_Bump_Map(), {
+                color: hex_color("#ffffff"),
+                ambient: 0.4, diffusivity: 0.1, specularity: 0.1,
+                texture: new Texture("assets/floor2.webp", "NEAREST"),
+                bump_map: new Texture("assets/wood_bump_map.jpg", "NEAREST")
             }),
             day_back: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#7BB2DD")}),
@@ -378,7 +384,7 @@ export class GoodMinton extends Scene {
 
     draw_floor(context, program_state){
         let floor_transform = Mat4.identity().times(Mat4.translation(this.floor_coord[0], this.floor_coord[1], this.floor_coord[2])).times(Mat4.scale(this.floor_scale[0], this.floor_scale[1], this.floor_scale[2]));
-        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.ground);
+        this.shapes.cube.draw(context, program_state, floor_transform, this.materials.bump_floor);
 
         let grass1_transform = floor_transform.times(Mat4.translation(0,1,-0.8)).times(Mat4.scale(1,0.1,0.2));
         this.shapes.cube.draw(context, program_state, grass1_transform, this.materials.ground2);

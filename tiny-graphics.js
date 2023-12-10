@@ -1080,7 +1080,9 @@ const Shader = tiny.Shader =
             const gpu_instance = super.copy_onto_graphics_card(context, initial_gpu_representation);
 
             const gl = context;
+            this.gl = gl;
             const program = gpu_instance.program || context.createProgram();
+            this.program = program;
             const vertShdr = gpu_instance.vertShdr || gl.createShader(gl.VERTEX_SHADER);
             const fragShdr = gpu_instance.fragShdr || gl.createShader(gl.FRAGMENT_SHADER);
 
