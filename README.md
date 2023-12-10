@@ -1,4 +1,5 @@
 # goodminton
+
 <H2>Goal</H2>
 Goodminton is like badminton, but good. The goal is to implmement a two-player game in which each player must swing their racket in order to hit the cork 
 over the net. 
@@ -23,3 +24,10 @@ over the net.
 
 As the cork flies towards the player, time the swing of the racket so the racket sends the cork in the appropriate direction to let the cork go over the net.
 The first player to miss the cork or hit it into the net/ground loses. 
+
+<H2>Creators</H2>
+Isaac Sterling: isaacjeffrey789@gmail.com <br>
+Elliot Lin: elliotlin02@g.ucla.edu <br>
+Vikram Chilkunda: vchilkunda@g.ucla.edu <br>
+Adarsh Chilkunda: achilkunda@g.ucla.edu <br>
+Kristina Domingo: kristinadomingo@g.ucla.edu <br>
