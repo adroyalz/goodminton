@@ -810,57 +810,49 @@ const Floor_Bump_Map = defs.Floor_Bump_Map =
             return this.shared_glsl_code() + `
                 varying vec2 f_tex_coord;
                 attribute vec3 position, normal;                            
-                // Position is expressed in object coordinates.
                 attribute vec2 texture_coord;
-                
-                uniform sampler2D bump_map;
                 
                 uniform mat4 model_transform;
                 uniform mat4 projection_camera_model_transform;
         
-                void main(){                                                                   
-                    // The vertex's final resting place (in NDCS):
-                    gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
-                    // The final normal vector in screen space.
-                    // N = normalize( mat3( model_transform ) * normal / squared_scale);
-                    vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
-                    // Turn the per-vertex texture coordinate into an interpolated variable.
+                void main() {                                                                   
+                    gl_Position = projection_camera_model_transform * vec4(position, 1.0);
                     f_tex_coord = texture_coord;
-                    
-                    
-                    vec2 texelSize = 1.0 / textureSize(bump_map, 0);  // Compute texel size
-                    vec2 uv = gl_FragCoord.xy / vec2(textureSize(bump_map, 0));
-                
-                    // Sample neighboring pixels
-                    vec3 left = texture2D(bump_map, uv - vec2(texelSize.x, 0.0)).rgb;
-                    vec3 right = texture2D(bump_map, uv + vec2(texelSize.x, 0.0)).rgb;
-                    vec3 top = texture2D(bump_map, uv + vec2(0.0, texelSize.y)).rgb;
-                    vec3 bottom = texture2D(bump_map, uv - vec2(0.0, texelSize.y)).rgb;
-                
-                    // Sobel operator to calculate gradients
-                    float gx = (-left.r + right.r - 2.0 * left.g + 2.0 * right.g - left.b + right.b) / 8.0;
-                    float gy = (-bottom.r - 2.0 * top.r - bottom.g + 2.0 * top.g - bottom.b + 2.0 * top.b) / 8.0;
-                
-                    // Normalize the gradient to get the normal vector
-                    vec3 normal = normalize(vec3(gx, gy, 1.0));
-                
-                  } `;
+                } `;
         }
+
         fragment_glsl_code() {
             // ********* FRAGMENT SHADER *********
             return this.shared_glsl_code() + `
                 varying vec2 f_tex_coord;
                 uniform sampler2D texture;
-        
-                void main(){
-                    // Sample the texture image in the correct place:
-                    vec4 tex_color = texture2D( texture, f_tex_coord );
-                    if( tex_color.w < .01 ) discard;
+                uniform sampler2D bump_map;
+
+                void main() {
+                    vec4 tex_color = texture2D(texture, f_tex_coord);
+                    if (tex_color.w < 0.01) discard;
+
+                    vec2 texelSize = 1.0 / textureSize(bump_map, 0);
+                    vec2 uv = gl_FragCoord.xy / vec2(textureSize(bump_map, 0));
+
+                    // Sample neighboring pixels from the bump map
+                    vec3 left = texture2D(bump_map, uv - vec2(texelSize.x, 0.0)).rgb;
+                    vec3 right = texture2D(bump_map, uv + vec2(texelSize.x, 0.0)).rgb;
+                    vec3 top = texture2D(bump_map, uv + vec2(0.0, texelSize.y)).rgb;
+                    vec3 bottom = texture2D(bump_map, uv - vec2(0.0, texelSize.y)).rgb;
+
+                    // Sobel operator to calculate gradients
+                    float gx = (-left.r + right.r - 2.0 * left.g + 2.0 * right.g - left.b + right.b) / 8.0;
+                    float gy = (-bottom.r - 2.0 * top.r - bottom.g + 2.0 * top.g - bottom.b + 2.0 * top.b) / 8.0;
+
+                    // Normalize the gradient to get the normal vector
+                    vec3 normal = normalize(vec3(gx, gy, 1.0));
+
                     // Compute an initial (ambient) color:
-                    gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                    gl_FragColor = vec4((tex_color.xyz + shape_color.xyz) * ambient, shape_color.w * tex_color.w);
                     // Compute the final color with contributions from lights:
-                    gl_FragColor.xyz += phong_model_lights( normalize( normal ), vertex_worldspace );
-                  } `;
+                    gl_FragColor.xyz += phong_model_lights(normalize(normal), vertex_worldspace);
+                } `;
         }
     }
 
